@@ -21,13 +21,6 @@ jobs:
       - uses: actions/checkout@v4
         timeout-minutes: 2
         with:
-          repository: vLLM-HUST/request-throttling-controller
-          ssh-key: ${{ secrets.RIDE_CONTROLLER_CHECKOUT_KEY }}
-          ref: cb4c4e5c46875ea7f2a0a8618c54c9bb39989926
-          path: controller
-      - uses: actions/checkout@v4
-        timeout-minutes: 2
-        with:
           repository: ThunderAgent-org/ThunderAgent
           ref: 7ddc8610270e56d3b109eed8796b3a4360fc67c9
           path: upstream
@@ -45,8 +38,8 @@ jobs:
           printf '%s\n' "$CLOUD_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/ride_ci ~/.ssh/known_hosts
           trap 'rm -f ~/.ssh/ride_ci' EXIT
-          printf '{"revision":"%s"}\n' "$GITHUB_SHA" > metadata.json
-          tar -czf input.tar.gz --exclude=.git --exclude=__pycache__ --exclude=results repo/src/ride repo/scripts repo/tests repo/pyproject.toml controller/src/thunderagent_controller_mod upstream/ThunderAgent metadata.json
+          printf '{"revision":"%s","controller_revision":"cb4c4e5c46875ea7f2a0a8618c54c9bb39989926"}\n' "$GITHUB_SHA" > metadata.json
+          tar -czf input.tar.gz --exclude=.git --exclude=__pycache__ --exclude=results repo/src/ride repo/scripts repo/tests repo/pyproject.toml upstream/ThunderAgent metadata.json
           status=0
           timeout 12m ssh -i ~/.ssh/ride_ci -o BatchMode=yes -o ClearAllForwardings=yes -o ConnectTimeout=20 "$CLOUD_HOST" ride-cpu-acceptance < input.tar.gz > evidence.tar.gz || status=$?
           tar -xzf evidence.tar.gz

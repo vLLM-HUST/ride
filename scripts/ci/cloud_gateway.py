@@ -1,5 +1,5 @@
 """Installed cloud-side fixed command. Accept source files, execute only inside CPU Pod."""
-import io,json,os,re,shutil,subprocess,sys,tarfile,uuid
+import hashlib,io,json,os,re,shutil,subprocess,sys,tarfile,uuid
 from pathlib import Path
 os.umask(0o077)
 if os.environ.get('SSH_ORIGINAL_COMMAND') != 'ride-cpu-acceptance':raise SystemExit('Only ride-cpu-acceptance is permitted')
@@ -19,7 +19,13 @@ try:
     target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(archive.extractfile(member).read())
  metadata=json.loads((root/'metadata.json').read_text());revision=metadata['revision']
  if not re.fullmatch('[a-f0-9]{40}',revision):raise ValueError('Expected exact commit')
+ if metadata.get('controller_revision')!='cb4c4e5c46875ea7f2a0a8618c54c9bb39989926':raise ValueError('Unknown Controller revision')
+ provenance=json.loads(Path('/opt/ride-ci/controller-provenance.json').read_text())
+ for relative,digest in provenance['hashes'].items():
+  if hashlib.sha256((Path('/opt/ride-ci/controller-source')/relative).read_bytes()).hexdigest()!=digest:raise ValueError('Controller cache hash mismatch')
+ shutil.copytree('/opt/ride-ci/controller-source',root/'controller')
  evidence=root/'evidence';evidence.mkdir()
+ (evidence/'controller-provenance.json').write_text(json.dumps(provenance,indent=2))
  result=subprocess.run(['/usr/bin/python3','/opt/ride-ci/run_cloud_cpu_acceptance.py','--local','--revision',revision,'--image','192.168.0.2:5050/vllm-ascend-rayfull:v0.23.0-openeuler','--controller-source',str(root/'controller'),'--upstream-source',str(root/'upstream'),'--output',str(evidence)],cwd=root/'repo',stdout=sys.stderr,stderr=sys.stderr)
  with tarfile.open(fileobj=sys.stdout.buffer,mode='w|gz') as archive:archive.add(evidence,arcname='evidence')
  sys.stdout.buffer.flush()
