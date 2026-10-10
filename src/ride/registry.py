@@ -1,5 +1,12 @@
 """Process descriptions: policy implementations remain in their own packages."""
 import shlex
+from importlib.metadata import entry_points
+
+def controller_adapter(name):
+    matches=list(entry_points(group="ride.controllers", name=name))
+    if len(matches)>1: raise ValueError("Duplicate Controller type: " + name)
+    return matches[0].load() if matches else None
+
 
 def command(kind, spec):
     name = spec.get('type', spec.get('entrypoint'))
@@ -9,6 +16,9 @@ def command(kind, spec):
         return shlex.join(['python', '-m', 'thunderagent_controller_mod',
             '--endpoint', spec['backend'], '--listen', spec.get('listen', '0.0.0.0:9000'),
             '--enable', '--transport', spec.get('transport', 'no-keepalive')])
+    if kind == 'controllers':
+        adapter=controller_adapter(name)
+        if adapter is not None:return adapter.command(spec)
     if kind == 'model_services' and name == 'mock-vllm':
         if not spec.get('model') or not spec.get('endpoint'):raise ValueError('Mock service requires model and endpoint')
         if spec.get('num_gpus',0)>0 or any(v>0 for k,v in spec.get('resources',{}).items() if k in ('NPU','GPU')):raise ValueError('Mock fixture cannot reserve accelerator resources')

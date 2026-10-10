@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
-from .registry import command
+from .registry import command, controller_adapter
 
 class Runtime:
     def __init__(self, config, client=None):
@@ -133,6 +133,17 @@ class Runtime:
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
             record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
+            adapter=controller_adapter(record['type']) if record['type']!='request-throttling' else None
+            if adapter is not None:
+                if record['job_status']=='RUNNING':
+                    try:
+                        observed=adapter.probe(spec)
+                        record['controller_ready']=observed.get('controller_ready') is True
+                        for field in ('health','identity','status'): 
+                            if field in observed:record[field]=observed[field]
+                        record['ready']=record['controller_ready']
+                    except Exception as error:record['probe_error']=type(error).__name__
+                return record
             record['backend'] = spec['backend']
             record['engine_ready'] = self.health(spec['backend'])
             if record['job_status'] == 'RUNNING':
