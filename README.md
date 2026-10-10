@@ -8,6 +8,8 @@ owner-only Coder App. RIDE's management API is not on the model request path.
 
 先从 [已有 Ray 集群的命令行操作说明](docs/CLI_QUICKSTART.md) 开始。
 
+新增 Controller 见 [Controller 开发与接入指南](docs/CONTROLLER_DEVELOPMENT.md)。
+
 ## Platform entry (v0.2)
 
 ```sh
