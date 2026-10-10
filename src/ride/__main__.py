@@ -37,11 +37,22 @@ def parser():
             s.add_argument('--port',type=int);s.add_argument('--num-cpus',type=float);s.add_argument('--num-gpus',type=float)
             s.add_argument('--runtime-env',help='JSON object');s.add_argument('--resources',help='Ray custom resources JSON object')
             s.add_argument('--model-arg',action='append',help='vllm argument; use --model-arg=--option for flags')
+    v=sub.add_parser('verify',help='Execute standardized acceptance and save evidence')
+    v.add_argument('--address',default=os.environ.get('RIDE_ADDRESS','http://127.0.0.1:19100'))
+    v.add_argument('--controller',required=True);v.add_argument('--model-service',required=True)
+    v.add_argument('--output',required=True);v.add_argument('--lifecycle',action='store_true')
+    v.add_argument('--model');v.add_argument('--baseline');v.add_argument('--timeout',type=float,default=120)
     return p
 
 def main(argv=None):
     p=parser();a=p.parse_args(argv)
     try:
+        if a.command=='verify':
+            from .acceptance import run
+            report=run(a.address,a.controller,a.model_service,a.output,a.lifecycle,a.model,a.baseline,a.timeout)
+            print(json.dumps({key:report[key] for key in ('status','complete','checks')},indent=2,ensure_ascii=False))
+            if report['status']=='FAIL':raise SystemExit(1)
+            return
         if a.command=='serve' or (a.command=='start' and not a.resource):
             if a.command=='serve' and a.resource:p.error('serve accepts control-plane configuration only')
             config=json.loads(Path(a.config).read_text()) if a.config else {'name':'RIDE','deployment':'ray','workspace':a.workspace,'state_file':a.state_file,'ray_address':a.ray_address,'controllers':[],'model_services':[]}

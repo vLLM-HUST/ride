@@ -1,4 +1,5 @@
 """Workspace-owned processes deployed to Ray; never adopt unrecorded jobs."""
+import os
 import copy
 import json
 import re
@@ -147,6 +148,6 @@ class Runtime:
             names = {k: list(v) for k,v in self.state['specs'].items()}
             operations = copy.deepcopy(self.state['operations'][-30:])
         return {'name': self.config.get('name', 'RIDE'), 'workspace': self.config['workspace'],
-            'run_id': self.state['run_id'], 'observed_at': datetime.now(timezone.utc).isoformat(),
+            'run_id': self.state['run_id'], 'management_pid': os.getpid(), 'observed_at': datetime.now(timezone.utc).isoformat(),
             **{kind: [self.describe(kind, n) for n in ids] for kind,ids in names.items()},
             'operations': operations, 'capabilities': {'inspect': True, 'start_controller': True, 'start_model_service': True, 'mutate': True}}
