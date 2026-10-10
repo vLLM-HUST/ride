@@ -130,6 +130,7 @@ class Runtime:
             except Exception as error: record['job_status'] = 'UNKNOWN'; record['job_error'] = type(error).__name__
         if kind == 'model_services':
             record['model'] = spec['model']
+            record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
             record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
             record['backend'] = spec['backend']
@@ -148,6 +149,6 @@ class Runtime:
             names = {k: list(v) for k,v in self.state['specs'].items()}
             operations = copy.deepcopy(self.state['operations'][-30:])
         return {'name': self.config.get('name', 'RIDE'), 'workspace': self.config['workspace'],
-            'run_id': self.state['run_id'], 'management_pid': os.getpid(), 'observed_at': datetime.now(timezone.utc).isoformat(),
+            'run_id': self.state['run_id'], 'management_pid': os.getpid(), 'build_revision': os.environ.get('RIDE_BUILD_REVISION'), 'observed_at': datetime.now(timezone.utc).isoformat(),
             **{kind: [self.describe(kind, n) for n in ids] for kind,ids in names.items()},
             'operations': operations, 'capabilities': {'inspect': True, 'start_controller': True, 'start_model_service': True, 'mutate': True}}

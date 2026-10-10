@@ -78,7 +78,7 @@ def main(argv=None):
             if a.command=='start':
                 changes=json.loads(Path(a.config).read_text()) if a.config else {}
                 builtin='request-throttling' if kind=='controllers' else 'vllm'
-                if a.target==builtin:changes.setdefault('type',builtin)
+                if a.target==builtin or (kind=='model-services' and a.target=='mock-vllm'):changes.setdefault('type',a.target)
                 for field in ('backend','endpoint','model_service','model','executor','transport','port','num_cpus','num_gpus'):
                     value=getattr(a,field,None)
                     if value is not None:changes[field]=value

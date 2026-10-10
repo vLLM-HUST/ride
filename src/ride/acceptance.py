@@ -57,6 +57,7 @@ def run(address, controller, model_service, output, lifecycle=False, model=None,
     try:
         first=call('status');report['before']=first
         engine=selected(first,'model_services',model_service); router=selected(first,'controllers',controller)
+        report['evidence_type']=engine.get('evidence_type','unknown')
         check('control_plane',lambda:{'passed':first.get('name')=='RIDE','workspace':first.get('workspace')})
         check('model_ready',lambda:{'passed':engine.get('ready') is True and engine.get('job_status')=='RUNNING','record':engine})
         check('controller_ready',lambda:{'passed':router.get('ready') is True and router.get('job_status')=='RUNNING','record':router})
@@ -87,7 +88,7 @@ def run(address, controller, model_service, output, lifecycle=False, model=None,
                 with urlopen(req,timeout=timeout) as response: data=json.load(response)
                 usage=data.get('usage',{});choices=data.get('choices',[])
                 passed=bool(choices and choices[0].get('message',{}).get('content')) and usage.get('prompt_tokens',0)>0 and usage.get('completion_tokens',0)>0
-                return {'passed':passed,'request':payload,'response':data,'note':'Ordinary request; does not prove program scheduling semantics'}
+                return {'passed':passed,'request':payload,'response':data,'note':'Ordinary request; mock token counts are synthetic, never tokenizer/caching/performance evidence' if engine.get('evidence_type')=='mock' else 'Ordinary request; does not prove program scheduling semantics'}
             check('inference',inference)
         if baseline:
             def adoption():

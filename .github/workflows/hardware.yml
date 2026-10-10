@@ -1,0 +1,25 @@
+name: RIDE hardware acceptance (9450)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ride-9450-workspace
+  cancel-in-progress: false
+jobs:
+  hardware:
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, ARM64, ride-9450]
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lifecycle and management adoption on owned 9450 workspace
+        env:
+          RIDE_DEPLOYMENT: /workspace/home/ride-platform-v02-20261010/ci-deployment.json
+        run: python scripts/cloud_hardware_workflow.py --deployment "$RIDE_DEPLOYMENT" --output evidence --revision "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ride-hardware-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error

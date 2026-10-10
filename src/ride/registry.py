@@ -9,6 +9,10 @@ def command(kind, spec):
         return shlex.join(['python', '-m', 'thunderagent_controller_mod',
             '--endpoint', spec['backend'], '--listen', spec.get('listen', '0.0.0.0:9000'),
             '--enable', '--transport', spec.get('transport', 'no-keepalive')])
+    if kind == 'model_services' and name == 'mock-vllm':
+        if not spec.get('model') or not spec.get('endpoint'):raise ValueError('Mock service requires model and endpoint')
+        if spec.get('num_gpus',0)>0 or any(v>0 for k,v in spec.get('resources',{}).items() if k in ('NPU','GPU')):raise ValueError('Mock fixture cannot reserve accelerator resources')
+        return shlex.join(['python','-m','ride.mock_vllm','--host',spec.get('host','0.0.0.0'),'--port',str(spec.get('port',8000))])
     if kind == 'model_services' and name == 'vllm':
         if not spec.get('model') or not spec.get('endpoint'):
             raise ValueError('Model service requires --model and reachable --endpoint')
