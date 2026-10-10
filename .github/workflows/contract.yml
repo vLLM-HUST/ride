@@ -6,29 +6,54 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ride-9450-workspace
+  group: ride-9450-cpu
   cancel-in-progress: false
 jobs:
   contracts:
     if: github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, linux, ARM64, ride-9450]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: Installed package contract tests on 9450
+        timeout-minutes: 2
+        with:
+          path: repo
+      - uses: actions/checkout@v4
+        timeout-minutes: 2
+        with:
+          repository: vLLM-HUST/request-throttling-controller
+          ref: cb4c4e5c46875ea7f2a0a8618c54c9bb39989926
+          path: controller
+      - uses: actions/checkout@v4
+        timeout-minutes: 2
+        with:
+          repository: ThunderAgent-org/ThunderAgent
+          ref: 7ddc8610270e56d3b109eed8796b3a4360fc67c9
+          path: upstream
+      - name: Provision, test and delete disposable CPU environment on 9450
+        env:
+          CLOUD_KEY: ${{ secrets.RIDE_CLOUD_KEY }}
+          CLOUD_HOST: ${{ secrets.RIDE_CLOUD_HOST }}
+          CLOUD_KNOWN_HOSTS: ${{ secrets.RIDE_CLOUD_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          mkdir -p evidence
-          python -m venv "$RUNNER_TEMP/ride-contract-$GITHUB_RUN_ID"
-          "$RUNNER_TEMP/ride-contract-$GITHUB_RUN_ID/bin/python" -m pip install . > evidence/install.log 2>&1
-          "$RUNNER_TEMP/ride-contract-$GITHUB_RUN_ID/bin/python" -m unittest discover -s tests -v > evidence/tests.log 2>&1
-      - name: Real Ray and Controller flow with Mock vLLM, no accelerator
-        env:
-          RIDE_DEPLOYMENT: /workspace/home/ride-platform-v02-20261010/ci-deployment.json
-        run: python scripts/cloud_cpu_workflow.py --deployment "$RIDE_DEPLOYMENT" --output evidence/cpu-flow --revision "$GITHUB_SHA"
+          test -n "$CLOUD_KEY" && test -n "$CLOUD_HOST" && test -n "$CLOUD_KNOWN_HOSTS"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$CLOUD_KEY" > ~/.ssh/ride_ci
+          printf '%s\n' "$CLOUD_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/ride_ci ~/.ssh/known_hosts
+          trap 'rm -f ~/.ssh/ride_ci' EXIT
+          printf '{"revision":"%s"}\n' "$GITHUB_SHA" > metadata.json
+          tar -czf input.tar.gz --exclude=.git --exclude=__pycache__ --exclude=results repo/src/ride repo/scripts repo/tests repo/pyproject.toml controller/src/thunderagent_controller_mod upstream/ThunderAgent metadata.json
+          status=0
+          timeout 12m ssh -i ~/.ssh/ride_ci -o BatchMode=yes -o ClearAllForwardings=yes -o ConnectTimeout=20 "$CLOUD_HOST" ride-cpu-acceptance < input.tar.gz > evidence.tar.gz || status=$?
+          tar -xzf evidence.tar.gz
+          if test -f evidence/evidence.tar.gz; then tar -xzf evidence/evidence.tar.gz -C evidence; fi
+          exit "$status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ride-contract-${{ github.run_id }}
+          name: ride-cloud-cpu-${{ github.run_id }}
           path: evidence/
           if-no-files-found: error

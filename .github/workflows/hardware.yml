@@ -12,10 +12,15 @@ jobs:
     runs-on: [self-hosted, linux, ARM64, ride-9450]
     timeout-minutes: 20
     steps:
+      - name: Validate provisioned acceptance environment
+        env:
+          RIDE_DEPLOYMENT: ${{ vars.RIDE_DEPLOYMENT }}
+        run: test -n "$RIDE_DEPLOYMENT" && test -f "$RIDE_DEPLOYMENT"
       - uses: actions/checkout@v4
+        timeout-minutes: 2
       - name: Lifecycle and management adoption on owned 9450 workspace
         env:
-          RIDE_DEPLOYMENT: /workspace/home/ride-platform-v02-20261010/ci-deployment.json
+          RIDE_DEPLOYMENT: ${{ vars.RIDE_DEPLOYMENT }}
         run: python scripts/cloud_hardware_workflow.py --deployment "$RIDE_DEPLOYMENT" --output evidence --revision "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()

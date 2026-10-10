@@ -4,7 +4,7 @@ from pathlib import Path
 from urllib.request import urlopen
 p=argparse.ArgumentParser();p.add_argument('--deployment',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--revision',required=True);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 s=json.loads(a.deployment.read_text())
-assert s.get('cloud')=='9450' and s.get('workspace')=='ray-admin-ride-e2e-myc','Dedicated owned 9450 deployment required'
+assert s.get('cloud')=='9450' and (s.get('workspace')=='ray-admin-ride-e2e-myc' or str(s.get('workspace','')).startswith('ride-cpu-ci-myc-')),'Dedicated owned 9450 deployment required'
 from ray.job_submission import JobSubmissionClient
 c=JobSubmissionClient('http://127.0.0.1:8265')
 listen=s.get('listen','0.0.0.0:19100')
@@ -32,7 +32,7 @@ def restart():
         if time.monotonic()>deadline:raise TimeoutError('Management stop timed out')
         time.sleep(1)
     runtime_env=dict(job.runtime_env or {});env=dict(runtime_env.get('env_vars',{}))
-    env['PYTHONPATH']=str(candidate)+':'+s['root'];env['RIDE_BUILD_REVISION']=a.revision;runtime_env['env_vars']=env
+    env['PYTHONPATH']=str(candidate)+':'+s['root']+':'+env.get('PYTHONPATH','');env['RIDE_BUILD_REVISION']=a.revision;runtime_env['env_vars']=env
     new='ride-ci-management-'+uuid.uuid4().hex[:12]
     # Persist before submit; an uncertain submission never results in blind retry.
     s['management_job']=new;a.deployment.write_text(json.dumps(s,indent=2))

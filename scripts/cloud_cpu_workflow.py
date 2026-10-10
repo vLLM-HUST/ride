@@ -3,7 +3,7 @@ import argparse,json,os,subprocess,sys,time,uuid
 from pathlib import Path
 from urllib.request import urlopen
 p=argparse.ArgumentParser();p.add_argument('--deployment',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--revision',required=True);a=p.parse_args();base=json.loads(a.deployment.read_text());a.output.mkdir(parents=True,exist_ok=True)
-assert base['cloud']=='9450' and base['workspace']=='ray-admin-ride-e2e-myc'
+assert base['cloud']=='9450' and (base['workspace']=='ray-admin-ride-e2e-myc' or base['workspace'].startswith('ride-cpu-ci-myc-'))
 from ray.job_submission import JobSubmissionClient
 c=JobSubmissionClient('http://127.0.0.1:8265');suffix=uuid.uuid4().hex[:10]
 root=Path(base['root']).parent/('ride-cpu-'+suffix);root.mkdir()
@@ -43,5 +43,11 @@ finally:
     if path.exists():owned.append(json.loads(path.read_text())['management_job'])
     for identifier in set(owned):
         try:
-            (a.output/(identifier+'.log')).write_text(c.get_job_logs(identifier));c.stop_job(identifier)
-        except Exception:pass
+            c.stop_job(identifier)
+            deadline=time.monotonic()+60
+            while c.get_job_status(identifier).value not in ('STOPPED','FAILED','SUCCEEDED'):
+                if time.monotonic()>deadline:raise TimeoutError('Owned job cleanup timed out: '+identifier)
+                time.sleep(1)
+            (a.output/(identifier+'.log')).write_text(c.get_job_logs(identifier))
+        except Exception as error:
+            (a.output/(identifier+'-cleanup-error.txt')).write_text(str(error))
