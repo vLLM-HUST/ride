@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 [project]
 name = "ride-control-plane"
-version = "0.1.0"
+version = "0.2.0"
 requires-python = ">=3.10"
 description = "RIDE inference control plane"
 [project.optional-dependencies]
@@ -12,5 +12,6 @@ ray = ["ray[default]>=2.48,<3"]
 ride = "ride.__main__:main"
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["ride", "ride.*"]
 [tool.setuptools.package-data]
 ride = ["index.html"]

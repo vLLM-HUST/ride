@@ -1,6 +1,6 @@
 # RIDE：可复用控制平面框架与服务平台规范
 
-状态：设计规范 v0.1，2026-10-10。`ride serve --config`、工作区 UI 和单 controller Ray 生命周期已实现；其余命令及公共控制闭环契约为目标接口。
+状态：设计规范 v0.2，2026-10-10。平台 start/get/describe/logs/stop 入口、Controller 与模型服务的 Ray 生命周期已实现并通过 CPU 接口回归；新入口硬件验收待完成。完整公共控制闭环契约仍为目标。
 
 ## 术语与架构边界（以用户控制面定义为准）
 
@@ -27,24 +27,17 @@ RIDE 是统一运行、组合与治理 controller 的控制平面。用户通过
 ## 统一命令
 
 ```bash
-# 验证配置并展示控制权、请求路径和计划，不启动服务
-ride validate --config ride.yaml
-ride plan --config ride.yaml
-
-# 本机前台启动；不隐式启动或停止外部引擎
-ride serve --config ride.yaml
-
-# 便捷选择单个 controller，等价于明确的配置
-ride serve --controller request-throttling --backend http://127.0.0.1:8000
-
-# 连接运行中的平台；运行标识、目标和 controller 必须明确
-ride status --address http://127.0.0.1:9100
-ride controller list --address http://127.0.0.1:9100
-ride controller disable request-throttling --address http://127.0.0.1:9100
-ride doctor --address http://127.0.0.1:9100
+ride start
+ride start model-service vllm --name model-main --model /models/Qwen --endpoint http://model-host:8000
+ride start controller request-throttling --name throttle-main --backend http://model-host:8000 --endpoint http://controller-host:9000
+ride get controllers
+ride get model-services
+ride describe controller throttle-main
+ride logs controller throttle-main
+ride stop controller throttle-main
 ```
 
-`serve` 运行控制平面；`controller` 管理组件；`status` 展示实际运行状态；`doctor` 检查依赖、权限和控制路径。服务化后的 CLI 使用同一管理 API，不另造一套语义。安装、配置、启用、就绪、实际生效分别记录。
+Controller 类型不是一级命令。YAML 可选的愿景不等于 YAML 解析已实现：当前 --config 读取 JSON。普通操作只需类型和必要参数。模型文件、Ray 资源和环境依赖须显式提供。CLI/UI 使用同一管理 API；同名同配置幂等，不同配置冲突拒绝。
 
 ## 声明式配置示例
 
