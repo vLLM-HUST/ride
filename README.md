@@ -6,6 +6,8 @@ Ray is the process execution substrate: RIDE deploys independent Controller and
 Each Coder workspace owns its RIDE instance and exposes the UI through its own
 owner-only Coder App. RIDE's management API is not on the model request path.
 
+先从 [已有 Ray 集群的命令行操作说明](docs/CLI_QUICKSTART.md) 开始。
+
 ## Platform entry (v0.2)
 
 ```sh
