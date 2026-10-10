@@ -139,7 +139,7 @@ class Runtime:
                     try:
                         observed=adapter.probe(spec)
                         record['controller_ready']=observed.get('controller_ready') is True
-                        for field in ('health','identity','status'): 
+                        for field in ('health','identity','status'):
                             if field in observed:record[field]=observed[field]
                         record['ready']=record['controller_ready']
                     except Exception as error:record['probe_error']=type(error).__name__
