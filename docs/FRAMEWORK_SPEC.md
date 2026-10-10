@@ -4,6 +4,8 @@
 
 ## 产品定位
 
+部署边界修正：每个 Coder workspace 独立运行自己的 RIDE 实例，配置、controller、日志、端口和生命周期属于该 workspace。Coder 只提供工作区管理、认证与应用反向代理。不在平台宿主机运行共享 RIDE，不使用平台根路径 /ride/ 作为产品入口。Ray 工作区内由 head 的 Coder Agent 代理本工作区 RIDE 应用端口；Ray Dashboard 与 RIDE 分开。
+
 RIDE 是统一运行、组合与治理 controller 的控制平面。用户通过 `ride` 选择 controller、连接被控系统、查看状态与执行结果。Controller 是 RIDE 的可安装组件；Request Throttling Controller 是第一个接入实例。RIDE 不限定组件必须轻量，不以重新实现上游算法作为接入条件，性能与正确性优先。
 
 例如：用户已经有一个 vLLM 引擎，需要限制同时 reasoning 的 program，同时按缓存局部性选择副本。RIDE 加载请求节流和前缀路由两个 controller，验证它们控制的资源及顺序，启动请求处理链；用户只使用 RIDE 输出的客户端地址。

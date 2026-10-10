@@ -1,5 +1,7 @@
 # 初始部署验收：2026-10-10
 
+作废：用户纠正部署归属。平台共享服务不是产品目标，已撤销新增网关 location 并禁用独立宿主机服务。下列记录仅保留错误部署的历史，不能作为 workspace 产品验收。下一验收必须使用 workspace 内 RIDE 和 Coder App。
+
 RIDE 初始只读 UI 已部署到用户授权的 9450 网关后，独立 CPU systemd 服务，不申请 NPU，不修改当前 9443 Ray 性能任务。
 
 实际验证：systemctl is-active ride=active；应用 /healthz 正常；/api/v1/status 返回真实 observed_at 和空 controllers；nginx -t 通过；Coder /healthz=200；未认证公网 /ride/=401；写 POST=405。

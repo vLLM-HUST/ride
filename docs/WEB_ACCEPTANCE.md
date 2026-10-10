@@ -2,7 +2,7 @@
 
 本阶段只交付只读管理服务与 UI，不把 UI 可访问等同于 controller 生命周期接入或性能验收。
 
-稳定入口为部署方配置的 `/ride/`，与 Ray Dashboard 分开；管理 API 为 `/ride/api/v1/status`、`/ride/api/v1/controllers`；存活探针 `/healthz` 不代表被管理 controller 就绪。
+入口必须是所属 workspace 的 Coder App，由 Coder 生成访问 URL；不得手拼或使用平台级 /ride/。应用内部 API 为 /api/v1/status、/api/v1/controllers；存活探针 /healthz 不代表被管理 controller 就绪。
 
 Ray 部署必须绑定自有 head 的 Service/端口或 Coder App，代理到 RIDE 应用端口；不绑定临时 Pod IP，不把 8265 Dashboard 当 RIDE UI。Service 的 selector 必须只选择对应运行，端点为空时显示不可用。停止 Ray 后 UI 不得继续显示健康缓存。
 
