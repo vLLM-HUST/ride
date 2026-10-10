@@ -1,6 +1,6 @@
 # RIDE
 
-RIDE is a workspace-owned inference control plane. Run management inside your Coder workspace; its Coder App proxies the Web UI. Ray runs controllers as separate jobs. Model engines have independent lifecycles.
+RIDE is the inference **Control Plane**. **Request Throttling is one Controller within RIDE**, not another name for RIDE. The current prototype implements workspace-owned controller lifecycle and observation, not the complete State / Decision / Actuation / Feedback framework. Run management inside your Coder workspace; its Coder App proxies the Web UI. Ray runs controllers as separate jobs. Model engines have independent lifecycles.
 
 ```sh
 python -m pip install '.[ray]'

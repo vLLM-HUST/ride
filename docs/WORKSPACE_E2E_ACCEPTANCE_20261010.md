@@ -2,6 +2,8 @@
 
 ## 目标与边界
 
+RIDE 是 Control Plane；Request Throttling 是其中一个 Controller。本轮是控制平面原型接入单 Controller 的部署与生命周期验收，不是完整 Control Plane 公共闭环验收。
+
 每个 Coder workspace 独立运行 RIDE，通过自己的 Coder App 查看、启动和停止 controller。Coder 提供认证和代理，Ray 执行 controller，模型引擎是独立 job。
 
 ```mermaid

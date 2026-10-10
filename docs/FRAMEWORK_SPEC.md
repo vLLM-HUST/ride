@@ -1,6 +1,20 @@
 # RIDE：可复用控制平面框架与服务平台规范
 
-状态：设计规范 v0.1，2026-10-10。本文命令和配置是目标接口，尚未实现；当前产品入口仍为 request-throttling-controller。不改变正在运行的实验。
+状态：设计规范 v0.1，2026-10-10。`ride serve --config`、工作区 UI 和单 controller Ray 生命周期已实现；其余命令及公共控制闭环契约为目标接口。
+
+## 术语与架构边界（以用户控制面定义为准）
+
+定义来源：[大模型推理的控制平面调研和方案选型](https://ocnkis1vvvv6.feishu.cn/docx/BMsZdF2PJoUwuvxJmUecLnHgn2H)，第 1.2、1.3、1.7–1.9 节。
+
+- **RIDE = Control Plane**：统一 Intent、State、Controllers、Actuation 与 Feedback / Reconcile；它不是 Request Throttling 的别名。
+- **Request Throttling = Controller**：RIDE 中针对 program 请求节流的一个控制闭环；不得把一个 Router 或 controller 称为完整控制平面。
+- **Controller Runtime**：承载触发、执行、生命周期、追踪与故障处理，不定义具体节流策略。当前 `ride.runtime.Runtime` 只实现 Ray job 生命周期和状态探测，是其部分实现。
+- **Ray = 执行后端**，**Coder = 工作区、认证和应用代理**，**vLLM = 推理 Data Plane**；它们都不等于 RIDE。
+- **Web UI / CLI = 管理入口**：表达配置、查看状态、发起操作；UI 可访问不代表完整控制闭环已经实现。
+
+统一 Controller 编程范式：`Observe → Analyze / Predict → Decide → Actuate → Verify / Reconcile`。Decision 尽量无副作用，外部修改通过 Actuator。Router 的转发属于执行职责，内部节流决策属于 Controller 职责；逻辑分层不强制拆成独立进程。
+
+当前验收仅证明 RIDE 原型能承载 Request Throttling Controller 并管理其 Ray 生命周期。统一 State、Decision / Action、Actuator、Feedback 和跨 Controller 组合尚未完整实现；不能把“启动一个 controller”称为完整 RIDE 架构验收。
 
 ## 产品定位
 
