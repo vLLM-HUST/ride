@@ -23,7 +23,7 @@ flowchart TD
 
 GitHub CPU workflow 在 main 更新或手动运行时触发。GitHub 执行器下载固定依赖后，把源文件交给云端固定命令；云端无需连接 GitHub。专用 SSH Key 使用 `restrict` 与固定 command，只允许 `ride-cpu-acceptance`，禁止端口转发、交互终端和其他命令。网关拒绝路径穿越、链接和过大包；仓库源代码在无宿主机挂载的 CPU Pod 内执行，宿主机只运行已安装的固定编排器。
 
-平台运维需要预装网关脚本并配置云端三项仓库 Secret：`RIDE_CLOUD_KEY`、`RIDE_CLOUD_HOST`、`RIDE_CLOUD_KNOWN_HOSTS`。实际值不放进仓库。私有 Controller 仓库禁止部署密钥，遵守该策略。云端保存指定提交的只读源码快照，使用逐文件哈希校验后注入临时 Pod；GitHub 不接收个人访问令牌或私有源码快照。当前固定提交为 `cb4c4e5c46875ea7f2a0a8618c54c9bb39989926`，更新依赖须重新部署并校验快照。真机 workflow 仍需显式提供专用执行器及部署记录，不能沿用已删除工作区。
+平台运维将固定运行器安装到 `/opt/ride-ci/`，按 `docs/ci-cloud-profile.example.json` 配置云端 `/etc/ride-ci/config.json`，再配置云端三项仓库 Secret：`RIDE_CLOUD_KEY`、`RIDE_CLOUD_HOST`、`RIDE_CLOUD_KNOWN_HOSTS`。实际值不放进仓库。私有 Controller 仓库禁止部署密钥，遵守该策略。云端保存指定提交的只读源码快照，使用逐文件哈希校验后注入临时 Pod；GitHub 不接收个人访问令牌或私有源码快照。当前固定提交为 `cb4c4e5c46875ea7f2a0a8618c54c9bb39989926`，更新依赖须重新部署并校验快照。真机 workflow 仍需显式提供专用执行器及部署记录，不能沿用已删除工作区。
 
 ## 判据与证据
 

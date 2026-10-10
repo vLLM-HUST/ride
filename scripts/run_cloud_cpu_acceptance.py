@@ -42,6 +42,6 @@ finally:
   except subprocess.CalledProcessError:(a.output/'collection-error.txt').write_text('Evidence directory unavailable; inspect cloud pod log.')
   (a.output/'pod-final.json').write_bytes(remote(['kubectl','get','pod',name,'-n',namespace,'-o','json']))
   remote(['kubectl','delete','pod',name,'-n',namespace,'--wait=true','--timeout=60s'])
-  try:remote(['kubectl','get','pod',name,'-n',namespace]);raise RuntimeError('Temporary Pod still present')
-  except subprocess.CalledProcessError:pass
+  remaining=remote(['kubectl','get','pod',name,'-n',namespace,'--ignore-not-found','-o','name']).decode().strip()
+  if remaining:raise RuntimeError('Temporary Pod still present: '+remaining)
   (a.output/'cleanup.json').write_text(json.dumps({'pod':name,'deleted':True,'accelerator_resources_requested':0}))

@@ -3,6 +3,7 @@ import hashlib,io,json,os,re,shutil,subprocess,sys,tarfile,uuid
 from pathlib import Path
 os.umask(0o077)
 if os.environ.get('SSH_ORIGINAL_COMMAND') != 'ride-cpu-acceptance':raise SystemExit('Only ride-cpu-acceptance is permitted')
+profile=json.loads(Path('/etc/ride-ci/config.json').read_text())
 root=Path('/var/lib/ride-ci/runs')/uuid.uuid4().hex;root.mkdir(parents=True)
 try:
  data=sys.stdin.buffer.read(64*1024*1024+1)
@@ -26,7 +27,7 @@ try:
  shutil.copytree('/opt/ride-ci/controller-source',root/'controller')
  evidence=root/'evidence';evidence.mkdir()
  (evidence/'controller-provenance.json').write_text(json.dumps(provenance,indent=2))
- result=subprocess.run(['/usr/bin/python3','/opt/ride-ci/run_cloud_cpu_acceptance.py','--local','--revision',revision,'--image','192.168.0.2:5050/vllm-ascend-rayfull:v0.23.0-openeuler','--controller-source',str(root/'controller'),'--upstream-source',str(root/'upstream'),'--output',str(evidence)],cwd=root/'repo',stdout=sys.stderr,stderr=sys.stderr)
+ result=subprocess.run(['/usr/bin/python3','/opt/ride-ci/run_cloud_cpu_acceptance.py','--local','--revision',revision,'--image',profile['cpu_image'],'--controller-source',str(root/'controller'),'--upstream-source',str(root/'upstream'),'--output',str(evidence)],cwd=root/'repo',stdout=sys.stderr,stderr=sys.stderr)
  with tarfile.open(fileobj=sys.stdout.buffer,mode='w|gz') as archive:archive.add(evidence,arcname='evidence')
  sys.stdout.buffer.flush()
  sys.exit(result.returncode)
