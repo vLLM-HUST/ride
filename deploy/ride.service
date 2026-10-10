@@ -1,0 +1,13 @@
+[Unit]
+Description=RIDE read-only control plane prototype
+After=network.target
+[Service]
+User=nobody
+Environment=PYTHONPATH=/opt/ride/src
+ExecStart=/usr/bin/python3 -m ride serve --config /etc/ride/config.json --listen 127.0.0.1:19100
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+[Install]
+WantedBy=multi-user.target
