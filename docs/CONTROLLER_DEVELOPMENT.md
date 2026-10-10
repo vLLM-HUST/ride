@@ -49,19 +49,23 @@ python -m your_controller --backend http://model-host:8000 --listen 0.0.0.0:9011
 必须为自己的类型增加适配器与对应探测逻辑，再接入 RIDE；通用 Controller SDK、自动插件发现尚未实现。
 健康、进程运行与策略有效是三个不同结论：健康检查不能证明策略正确或性能收益。
 
-## 3. 接入 RIDE：当前需要修改的三个位置
+## 3. 接入 RIDE：独立包注册适配器
 
-1. `src/ride/registry.py` 的 `command(kind, spec)`：注册 Controller 类型，校验必要参数，
-   用 `shlex.join` 构造明确入口。策略代码留在 Controller 包中。
-2. `src/ride/__main__.py`：增加新类型的识别及需要的参数转换。
-   当前自动填充 `type` 的 Controller 只有 `request-throttling`；仅加 registry 分支还不够。
-3. `src/ride/runtime.py` 的 `describe`：按类型选择实际健康、身份和状态探测。
-   不把 Request Throttling 专用判据直接套在其他 Controller 上。
+现在支持 Python entry point `ride.controllers`。独立包注册一个适配器，RIDE 自动发现。
+参考可运行模板：[ride-controller-demo](https://github.com/vLLM-HUST/ride-controller-demo)。
 
-未来建议把“配置校验、启动命令、Ready 探测、状态读取”收敛到按类型注册的适配器。
-这是后续代码重构方向，目前不是已发布的 API。
-新增类型不得绕开 Runtime 的持久化、重复提交保护和 owned Job 边界。
-当前配置主要围绕单模型后端；多后端或无后端 Controller 还需要扩展配置与状态展示。
+```toml
+[project.entry-points."ride.controllers"]
+demo = "ride_controller_demo.adapter:Adapter"
+```
+
+适配器提供两个静态方法：`command(spec) -> str` 校验配置并构造进程命令，
+`probe(spec) -> dict` 返回 `controller_ready` 布尔值及可选 health/identity/status。
+Ray 生命周期、Job ID、日志和持久化由 RIDE 统一管理；新类型不修改这些核心代码。
+管理环境和执行节点均需安装包；安装后重启管理进程以使用更新版本。
+重复注册同名类型会拒绝；内置 request-throttling 类型保留现有兼容路径，不允许覆盖。
+当前通用 CLI 提供 endpoint/port/runtime-env/resources 等配置；新增专用参数可通过
+JSON `--config` 传递。当前没有通用 Controller 策略 SDK、版本协商和插件隔离。
 
 接入完成后的统一命令形式：
 
