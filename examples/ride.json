@@ -1,0 +1,16 @@
+{
+  "name": "RIDE",
+  "deployment": "ray",
+  "workspace": "local-development",
+  "state_file": "./.ride/state.json",
+  "ray_address": "http://127.0.0.1:8265",
+  "controllers": [{
+    "id": "request-throttling",
+    "entrypoint": "request-throttling",
+    "backend": "http://127.0.0.1:8100",
+    "endpoint": "http://127.0.0.1:9000",
+    "listen": "0.0.0.0:9000",
+    "transport": "no-keepalive",
+    "autostart": false
+  }]
+}

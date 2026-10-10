@@ -4,7 +4,7 @@ RIDE is a workspace-owned inference control plane. Run management inside your Co
 
 ```sh
 python -m pip install '.[ray]'
-ride serve --config ride.json --listen 0.0.0.0:19100
+ride serve --config examples/ride.json --listen 0.0.0.0:19100
 ```
 
 The first supported controller is Request Throttling Controller. Install its pinned upstream dependencies in the Ray runtime before starting it. Configuration declares `deployment: ray`, `workspace`, `state_file`, `ray_address`, and controllers with `id`, `entrypoint: request-throttling`, `backend`, `endpoint`, `listen`, `runtime_env`, and `resources`. Set `autostart: true` for startup on launch; otherwise use the UI.

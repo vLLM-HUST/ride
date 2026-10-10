@@ -33,6 +33,8 @@ flowchart LR
 
 本地原始证据保留 `results/acceptance/`：smoke 原始 rounds/tokens/metrics/summary、smoke-audit.json、status-running.json、workspace-create.log、Coder App HTML 与恢复请求。原始结果不提交公共仓库。
 
+6. 工作区 Coder App 外网控制 API：admin 认证、同源 POST 返回 202、unchanged=true，未重复提交已有 job。
+
 ## 尚未宣称通过
 
 - 本轮是部署和生命周期验收，103 秒小样本不是性能收益证据。9443 三方并发扫描独立进行，不能把旧性能数当成 RIDE 本轮收益。
