@@ -6,6 +6,8 @@ name = "ride-control-plane"
 version = "0.1.0"
 requires-python = ">=3.10"
 description = "RIDE inference control plane"
+[project.optional-dependencies]
+ray = ["ray[default]>=2.48,<3"]
 [project.scripts]
 ride = "ride.__main__:main"
 [tool.setuptools.packages.find]
