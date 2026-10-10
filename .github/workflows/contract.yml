@@ -22,6 +22,7 @@ jobs:
         timeout-minutes: 2
         with:
           repository: vLLM-HUST/request-throttling-controller
+          ssh-key: ${{ secrets.RIDE_CONTROLLER_CHECKOUT_KEY }}
           ref: cb4c4e5c46875ea7f2a0a8618c54c9bb39989926
           path: controller
       - uses: actions/checkout@v4
