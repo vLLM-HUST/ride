@@ -64,7 +64,8 @@ def programs(plan, target, record):
     manifest=json.loads(Path(plan['upstream_manifest']).read_text())
     # Source paths are rooted at the ThunderAgent package, not an old checkout.
     expected=manifest['files']
-    actual={next(k for k in expected if x['file'].endswith('/'+k)):x['sha256'] for x in identity['loaded_sources']}
+    source_root = next(parent for parent in Path(identity['router_file']).parents if parent.name == 'ThunderAgent')
+    actual = {Path(x['file']).relative_to(source_root).as_posix():x['sha256'] for x in identity['loaded_sources']}
     assert actual==expected and len(actual)==17, 'Loaded source manifest mismatch'
     assert identity['backends']==[backend] and identity['scheduling_enabled'] is True, identity
     assert identity['transport']['max_keepalive_connections']==0, identity

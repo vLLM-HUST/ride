@@ -12,7 +12,7 @@ from urllib.parse import urlparse
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument('operation', choices=['deploy', 'accept'])
+    p.add_argument('operation', choices=['deploy', 'accept', 'accept-policy'])
     p.add_argument('--ssh-host', required=True)
     p.add_argument('--cloud-root', required=True)
     p.add_argument('--coder-url', required=True)

@@ -12,7 +12,7 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['deploy', 'accept'])
+    parser.add_argument('operation', choices=['deploy', 'accept', 'accept-policy'])
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
@@ -62,7 +62,21 @@ def main():
         from deployment_identity import verify_live
         action('deployment_identity', 'Live Coder owner/template/workspace/Ray binding verified', lambda: verify_live(plan))
         action('ray', 'Selected existing Ray Jobs endpoint responds', lambda: client.get_version())
-        if args.operation == 'deploy':
+        if args.operation == 'accept-policy':
+            from acceptance_policy import pressure, comparison
+            prerequisite = json.loads(Path(plan['prerequisite']).read_text())
+            assert prerequisite['status'] == 'INCOMPLETE' and all(x['status'] == 'PASS' for x in prerequisite['actions']), 'Functional prerequisite failed'
+            for kind in ('model_services', 'controllers'):
+                route = kind.replace('_', '-')
+                for spec in plan['pressure_instances'][kind]:
+                    path = route + '/' + spec['id']
+                    action('start_' + spec['id'], 'Owned pressure fixture submitted via RIDE', lambda path=path, spec=spec: request(plan['address'], path + '/start', spec))
+                    action('ready_' + spec['id'], 'Real pressure service Ready', lambda path=path: wait(path))
+            action('capacity_pressure', 'Actual paused Program resumes, completes and releases', lambda: pressure(plan, args.output))
+            action('same_input_comparison', 'Real direct and Controller responses match; timings archived without assumed speedup', lambda: comparison(plan, args.output))
+            ledger['status'] = 'PASS'
+            ledger['scope'] = 'RIDE real NPU functional/lifecycle and bounded pressure acceptance; short comparison is not research performance reproduction'
+        elif args.operation == 'deploy':
             receipt = args.output / 'management-submission.json'
             identifier = plan['management_job_id']
             if receipt.exists():

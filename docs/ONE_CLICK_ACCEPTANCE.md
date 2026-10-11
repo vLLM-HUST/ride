@@ -36,3 +36,37 @@
 Ray URL 只接受关联 head IP，或在该 head 内执行时的 localhost。其他代理形式尚未支持。
 `deployment_identity.py` 的九项正反例已在 9450 执行通过，属于 CPU 门禁测试；
 真实模型和完整端到端验收尚未完成。
+
+## 补充真实策略验收（2026-10-11）
+
+工作区内 RIDE 只访问 Ray；Coder/Kubernetes 身份核验在已有云上运维入口执行，
+不授予工作区查询 RayCluster 的权限。`cloud_operator.py` 只传输执行请求，
+不在本地启动服务或端口。平台预先提供 admin 标准 RayCluster 工作区。
+
+部署及功能验收完成后，使用同一入口补充缺失项目：
+
+```bash
+python3 scripts/cloud_operator.py accept-policy \
+  --ssh-host <existing-cloud-operator-host> \
+  --cloud-root <cloud-evidence-root> \
+  --coder-url <coder-url> --plan plan-policy.json \
+  --output <unique-run>/policy
+```
+
+计划必须引用已有功能验收账本（所有动作 PASS），明确压力模型与 controller 实例、
+依赖、Ray 节点资源及真实模型参数。补充入口仍通过 RIDE API 部署进程，
+不创建平台资源，也不重启已运行服务。运行中的产品包不改动。
+
+压力场景：32 个 program，真实模型 KV 固定 64×128=8192 token；观察实际暂停状态，
+释放其他已完成 program 后，同一个暂停 program 的下一轮必须恢复、完成，
+历史 tokenize 数量一致，最后释放所有 program。180 秒阶段超时即 FAIL。
+保留逐次状态、输入输出、Ray 日志、账本与哈希。
+
+同输入短对照：direct、Demo、Request Throttling，普通无身份请求，
+并发 1/4/8，每点两轮交替顺序，64 输出 token，temperature=0。
+所有响应的内容与 token 数哈希一致；原始耗时与 requests/s 写入统一 CSV。
+此对照不测试 program-aware 调度收益，不是 Figure1a 或正式性能复现，
+不使用短测结果替代三方 program 性能门禁。
+
+本阶段 PASS 只证明 RIDE 真实 NPU 部署、功能、生命周期及有界压力控制；
+上游完整语义对照与研究性能验收仍按独立契约判断。
