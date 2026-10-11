@@ -16,3 +16,7 @@ Every executed action records command, expectation, observation, exit status and
 Missing evidence is NOT_RUN/BLOCKED, never PASS. Never change thresholds after seeing results.
 New shared RayCluster is allowed only by explicit user instruction; record the instruction. It does not authorize Coder templates/workspaces.
 Do not infer full acceptance from a narrow script PASS. Review missing negative cases, adoption and real control semantics before claiming completion.
+
+Cloud deployment/acceptance entry: scripts/one-click.sh deploy|accept PLAN_JSON EVIDENCE_DIRECTORY.
+Extend this entry for missing gates; do not bypass it with undocumented manual recovery.
+Exit 3 / INCOMPLETE is unfinished acceptance, never PASS.

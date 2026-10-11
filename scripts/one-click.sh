@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ $# -ne 3 || ( "$1" != deploy && "$1" != accept ) ]]; then
+  echo 'Usage (run in cloud): one-click.sh deploy|accept PLAN_JSON EVIDENCE_DIRECTORY' >&2
+  exit 2
+fi
+exec python "$root/scripts/acceptance_entry.py" "$1" --plan "$2" --output "$3"
