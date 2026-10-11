@@ -1,3 +1,7 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
+> 本文涉及旧环境、旧入口或临时资源的内容为历史记录／早期规划，不是当前部署操作指南。已删除资源不得据此重建。
+
 # RIDE 平台入口重构 · 2026-10-10
 
 RIDE 是 Control Plane，Ray 是执行底座，Controller 与模型服务是独立进程。v0.2 将 CLI/API、类型描述和运行层拆分，保持 `ride serve` 兼容。

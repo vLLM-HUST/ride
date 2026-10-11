@@ -1,3 +1,5 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
 # RIDE：可复用控制平面框架与服务平台规范
 
 状态：设计规范 v0.2，2026-10-10。平台 start/get/describe/logs/stop 入口、Controller 与模型服务的 Ray 生命周期已实现并通过 CPU 接口回归；新入口硬件验收待完成。完整公共控制闭环契约仍为目标。

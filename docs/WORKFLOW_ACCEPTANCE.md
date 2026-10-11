@@ -1,3 +1,7 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
+> 本文涉及旧环境、旧入口或临时资源的内容为历史记录／早期规划，不是当前部署操作指南。已删除资源不得据此重建。
+
 # Workflow 验收
 
 日常回归不需要 GPU/NPU。`.github/workflows/contract.yml` 在 main push 或手动触发时，在专用 9450 runner 上安装当前提交并跑接口回归，然后运行真实 Ray、真实 RIDE 和真实 Request Throttling，模型替换为 CPU-only Mock vLLM。自动验证启动、依赖、幂等、日志、停止隔离、恢复、普通请求与管理进程重启接管，上传 evidence。不会运行外部 PR；两条 workflow 共享串行组且不取消正在验收的任务。

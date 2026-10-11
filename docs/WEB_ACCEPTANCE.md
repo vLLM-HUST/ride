@@ -1,3 +1,5 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
 # Web UI 部署与验收契约
 
 本阶段只交付只读管理服务与 UI，不把 UI 可访问等同于 controller 生命周期接入或性能验收。

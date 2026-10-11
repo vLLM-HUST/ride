@@ -1,3 +1,5 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
 # RIDE 标准验收契约
 
 RIDE 的验收入口为 `ride verify`，标准位于 `ride.acceptance.CONTRACT`，报告版本为 `ride.acceptance/v1`。每项固定输出 PASS、FAIL、NOT_RUN，包含判据、时间、被测实例、实际 Job ID、原始状态、请求/响应及服务日志。报告 PASS 表示执行的检查通过；complete=false 表示仍有部署/生命周期检查未运行。性能始终单独验收，不能从健康检查推导。

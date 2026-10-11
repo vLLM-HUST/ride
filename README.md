@@ -3,14 +3,17 @@
 RIDE is the inference **Control Plane**. Request Throttling is one Controller type.
 Ray is the process execution substrate: RIDE deploys independent Controller and
 `vllm serve` jobs, observes them, and manages only its persisted owned jobs.
-Each Coder workspace owns its RIDE instance and exposes the UI through its own
-owner-only Coder App. RIDE's management API is not on the model request path.
+RIDE connects to an existing RayCluster. It never requires a new Coder template
+or workspace per deployment. An existing owner-only Coder App is optional. RIDE's management API is not on the model request path.
 
 先从 [已有 Ray 集群的命令行操作说明](docs/CLI_QUICKSTART.md) 开始。
 
 新增 Controller 见 [Controller 开发与接入指南](docs/CONTROLLER_DEVELOPMENT.md)。
 
 安装部署见 [复用已有 RayCluster 的安装与部署脚本](docs/INSTALL_AND_DEPLOY.md)。
+
+Current deployment authority: [existing-Ray deployment policy](docs/DEPLOYMENT_POLICY.md).
+CPU tests are prerequisites; complete acceptance requires real NPU/model/control actions.
 
 ## Platform entry (v0.2)
 

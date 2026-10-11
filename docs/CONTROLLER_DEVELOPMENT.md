@@ -1,3 +1,5 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
 # Controller 开发与 RIDE 接入指南
 
 目标是让开发者实现自己的 Controller，然后用统一命令将独立进程部署到已有 Ray。

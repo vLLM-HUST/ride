@@ -1,3 +1,7 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
+> 本文涉及旧环境、旧入口或临时资源的内容为历史记录／早期规划，不是当前部署操作指南。已删除资源不得据此重建。
+
 # 临时 CPU 云端验收
 
 RIDE 是控制面，Request Throttling 是 Controller，Ray 是执行底座。本流程用真实 Ray、RIDE 和 Controller，只有模型服务使用明确标记的 Mock vLLM。所有安装、测试和执行发生在 9450 云上，GitHub 执行器只取代码、触发和接收证据。

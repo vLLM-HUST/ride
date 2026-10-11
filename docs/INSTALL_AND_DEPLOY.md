@@ -1,3 +1,5 @@
+> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+
 # 安装 RIDE，部署到已有 RayCluster
 
 只复用已有 RayCluster。以下脚本不会创建 Coder template/workspace、Kubernetes 对象，
