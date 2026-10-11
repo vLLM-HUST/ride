@@ -4,5 +4,5 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 venv="${1:-$PWD/.ride-venv}"
 python3 -m venv --system-site-packages "$venv"
-"$venv/bin/python" -m pip install "$root[ray]"
+"$venv/bin/python" -m pip install --no-build-isolation "$root[ray]" "${@:2}"
 printf 'RIDE installed. Activate with: source %q/bin/activate\n' "$venv"

@@ -4,6 +4,8 @@ Credentials are read from environment and are never included in the evidence.
 import json
 import os
 import subprocess
+import shutil
+import ssl
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
@@ -59,11 +61,24 @@ def verify_live(plan):
                       headers={'Coder-Session-Token': token})
         with urlopen(req, timeout=15) as response:
             return json.load(response)
-    def kube(kind, name):
-        return json.loads(subprocess.check_output(['kubectl', '-n', policy['namespace'], 'get', kind, name, '-o', 'json']))
+    def kube(kind, name=None):
+        if shutil.which('kubectl'):
+            command = ['kubectl', '-n', policy['namespace'], 'get', kind]
+            command += [name] if name else ['-l', 'ray.io/cluster=' + policy['cluster']]
+            return json.loads(subprocess.check_output(command + ['-o', 'json']))
+        from pathlib import Path
+        account = Path('/var/run/secrets/kubernetes.io/serviceaccount')
+        credential = (account / 'token').read_text().strip()
+        if kind == 'raycluster':
+            path = '/apis/ray.io/v1/namespaces/' + policy['namespace'] + '/rayclusters/' + name
+        else:
+            from urllib.parse import urlencode
+            path = '/api/v1/namespaces/' + policy['namespace'] + '/pods?' + urlencode({'labelSelector': 'ray.io/cluster=' + policy['cluster']})
+        req = Request('https://kubernetes.default.svc' + path, headers={'Authorization': 'Bearer ' + credential})
+        with urlopen(req, timeout=15, context=ssl.create_default_context(cafile=str(account / 'ca.crt'))) as response:
+            return json.load(response)
     user = get('users/me')
     workspace = get('workspaces/' + policy['workspace_id'])
     cluster = kube('raycluster', policy['cluster'])
-    pods = json.loads(subprocess.check_output(['kubectl', '-n', policy['namespace'], 'get', 'pods',
-        '-l', 'ray.io/cluster=' + policy['cluster'], '-o', 'json']))['items']
+    pods = kube('pods')['items']
     return validate_binding(policy, user, workspace, cluster, pods, plan['ray_address'], os.environ.get('HOSTNAME', ''))

@@ -133,6 +133,8 @@ class Runtime:
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
             record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
+            if spec.get('backend') is not None:
+                record['backend'] = spec['backend']
             adapter=controller_adapter(record['type']) if record['type']!='request-throttling' else None
             if adapter is not None:
                 if record['job_status']=='RUNNING':

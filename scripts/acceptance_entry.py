@@ -6,6 +6,7 @@ import hashlib
 import json
 import shlex
 import time
+from urllib.request import Request, urlopen
 from pathlib import Path
 
 
@@ -18,8 +19,16 @@ def main():
     plan = json.loads(args.plan.read_text())
     args.output.mkdir(parents=True, exist_ok=True)
     from ride.__main__ import request
-    from ray.job_submission import JobSubmissionClient
-    client = JobSubmissionClient(plan['ray_address'])
+    class JobsClient:
+        def call(self, path, body=None):
+            request = Request(plan['ray_address'].rstrip('/') + path, data=None if body is None else json.dumps(body).encode(), headers={'Content-Type': 'application/json'})
+            with urlopen(request, timeout=30) as response:
+                return json.load(response)
+        def get_version(self):
+            return self.call('/api/version')
+        def submit_job(self, **kwargs):
+            return self.call('/api/jobs/', kwargs)
+    client = JobsClient()
     ledger = {'operation': args.operation, 'status': 'RUNNING', 'actions': [],
               'plan_sha256': hashlib.sha256(args.plan.read_bytes()).hexdigest()}
     def save():
@@ -61,11 +70,11 @@ def main():
             config = json.loads(Path(plan['config']).read_text())
             if any(s.get('autostart') for k in ('model_services', 'controllers') for s in config.get(k, [])):
                 raise ValueError('Use autostart=false: models must be Ready before Controllers')
-            command = 'python -m ride start --config ' + shlex.quote(str(Path(plan['config']).resolve())) + ' --listen ' + shlex.quote(plan['listen'])
+            command = 'python -m ride start --config ' + shlex.quote(plan.get('management_config', str(Path(plan['config']).resolve()))) + ' --listen ' + shlex.quote(plan['listen'])
             def submit():
                 receipt.write_text(json.dumps({'job_id': identifier, 'entrypoint': command, 'status': 'SUBMISSION_INTENT'}))
                 return client.submit_job(submission_id=identifier, entrypoint=command,
-                    runtime_env=plan.get('runtime_env', {}), entrypoint_num_cpus=0.1)
+                    runtime_env=plan.get('runtime_env', {}), entrypoint_num_cpus=0.1, entrypoint_resources=plan.get('management_resources', {}))
             action('management', 'One explicitly named management Job submitted', submit)
             action('management_ready', 'RIDE API available', lambda: wait('status'))
             for kind in ('model_services', 'controllers'):
