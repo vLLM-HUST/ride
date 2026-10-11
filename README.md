@@ -10,6 +10,8 @@ owner-only Coder App. RIDE's management API is not on the model request path.
 
 新增 Controller 见 [Controller 开发与接入指南](docs/CONTROLLER_DEVELOPMENT.md)。
 
+安装部署见 [复用已有 RayCluster 的安装与部署脚本](docs/INSTALL_AND_DEPLOY.md)。
+
 ## Platform entry (v0.2)
 
 ```sh
