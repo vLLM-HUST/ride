@@ -86,7 +86,11 @@ def main():
             ledger['status'] = 'PASS'
         else:
             from ride.acceptance import run
+            from acceptance_scenarios import demo, programs, adoption
             for target in plan['acceptance_targets']:
+                record = request(plan['address'], 'controllers/' + target['controller'])
+                scenario = demo if record['type'] == 'demo' else programs
+                action('real_control_' + target['controller'], 'Actual control, output/token and negative-case evidence', lambda target=target, record=record, scenario=scenario: scenario(plan, target, record))
                 report = run(plan['address'], target['controller'], target['model_service'],
                     args.output / (target['controller'] + '.json'), lifecycle=True,
                     model=target['model'], timeout=plan.get('timeout', 900))
@@ -95,15 +99,31 @@ def main():
                 save()
                 if report['status'] != 'PASS':
                     raise RuntimeError('Controller deployment/lifecycle check failed')
+            action('management_adoption', 'New management process retains same instance Jobs and real requests', lambda: adoption(plan, client, wait))
+            for target in plan['acceptance_targets']:
+                from acceptance_scenarios import http, valid, payload
+                current = request(plan['address'], 'controllers/' + target['controller'])
+                action('post_adoption_' + target['controller'], 'Real inference succeeds after management restart', lambda target=target, current=current: valid(http(current['endpoint']+'/v1/chat/completions', payload(target['model']))))
             ledger['status'] = 'INCOMPLETE'
-            ledger['remaining'] = ['management adoption', 'controller-specific negative cases',
-                'source identity and program semantics', 'same-input performance']
+            ledger['remaining'] = ['capacity-pressure pause/resume', 'same-input performance']
+            ledger['scope'] = 'Real NPU RIDE deployment, two Controller control/negative cases and lifecycle; policy/performance incomplete'
             # Narrow lifecycle checks must never be reported as full acceptance.
             raise SystemExit(3)
     except Exception as error:
         ledger.update(status='FAIL', error=str(error))
         raise
     finally:
+        try:
+            snapshot = request(plan['address'], 'status')
+            (args.output / 'final-status.json').write_text(json.dumps(snapshot, indent=2))
+            identifiers = [x['job_id'] for kind in ('controllers','model_services') for x in snapshot[kind] if x.get('job_id')]
+            identifiers.append(plan['management_job_id'])
+            for job_id in identifiers:
+                (args.output / (job_id + '-log.json')).write_text(json.dumps(client.call('/api/jobs/' + job_id + '/logs'), indent=2))
+        except Exception as error:
+            ledger['archive_error'] = str(error)
+            if ledger['status'] == 'PASS':
+                ledger['status'] = 'FAIL'
         save()
         (args.output / 'evidence-sha256.json').write_text(json.dumps({p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in args.output.glob('*.json') if p.name != 'evidence-sha256.json'}, indent=2))
 

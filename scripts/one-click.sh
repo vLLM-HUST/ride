@@ -5,4 +5,4 @@ if [[ $# -ne 3 || ( "$1" != deploy && "$1" != accept ) ]]; then
   echo 'Usage (run in cloud): one-click.sh deploy|accept PLAN_JSON EVIDENCE_DIRECTORY' >&2
   exit 2
 fi
-exec python "$root/scripts/acceptance_entry.py" "$1" --plan "$2" --output "$3"
+exec "${RIDE_PYTHON:-python3}" "$root/scripts/acceptance_entry.py" "$1" --plan "$2" --output "$3"

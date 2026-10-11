@@ -29,6 +29,13 @@ def command(kind, spec):
         args = spec.get('args', [])
         if not isinstance(args, list) or not all(isinstance(a, str) for a in args):
             raise ValueError('Model args must be a list of strings')
-        return shlex.join(['vllm', 'serve', spec['model'], '--host',
-            spec.get('host', '0.0.0.0'), '--port', str(spec.get('port', 8000)), *args])
+        command_args = ['vllm', 'serve', spec['model'], '--host',
+            spec.get('host', '0.0.0.0'), '--port', str(spec.get('port', 8000)), *args]
+        scripts = spec.get('environment_scripts', [])
+        if not isinstance(scripts, list) or not all(isinstance(p, str) and p.startswith('/') for p in scripts):
+            raise ValueError('Environment scripts must be explicitly configured absolute paths')
+        if scripts:
+            setup = 'set -e; ' + '; '.join('source ' + shlex.quote(p) for p in scripts) + '; exec "$@"'
+            return shlex.join(['bash', '-c', setup, 'ride-model', *command_args])
+        return shlex.join(command_args)
     raise ValueError('Unsupported ' + kind + ' type: ' + str(name))
