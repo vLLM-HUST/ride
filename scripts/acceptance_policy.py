@@ -31,13 +31,12 @@ def pressure(plan, output):
             samples.append({'time':time.time(),'programs':states})
             for future, identifier in futures.items():
                 if future.done() and identifier not in results: results[identifier]=future.result()
-            candidates=[i for i,s in states.items() if s['status']=='paused' and i in results]
+            candidates=[i for i,s in states.items() if s['state']=='paused']
             if candidates:
                 paused=candidates[0];save();break
             save();time.sleep(.5)
         assert paused, 'No completed Program actually paused within pressure deadline'
-        history=messages+[results[paused]['response']['choices'][0]['message'],{'role':'user','content':'Explain one more observation.'}]
-        follow=pool.submit(step,paused,history)
+        selected=next(f for f,i in futures.items() if i==paused)
         # Retained completed Programs occupy actual scheduler capacity; release these,
         # rather than altering capacity or scheduler state, to enable resumption.
         deadline=time.monotonic()+180
@@ -49,10 +48,12 @@ def pressure(plan, output):
                     response=http(base+'/programs/release',{'program_id':identifier})
                     assert response[0]==200 and response[1]['released'];released.append(identifier)
             states=http(base+'/programs')[1];samples.append({'time':time.time(),'programs':states});save()
-            if follow.done() and all(f.done() for f in futures):break
+            if selected.done() and all(f.done() for f in futures):break
             time.sleep(.2)
-        assert follow.done() and all(f.done() for f in futures), 'Resume/drain deadline exceeded'
-        resumed=follow.result(); state=http(base+'/programs')[1][paused]
+        assert selected.done() and all(f.done() for f in futures), 'Resume/drain deadline exceeded'
+        first=selected.result()
+        history=messages+[first['response']['choices'][0]['message'],{'role':'user','content':'Explain one more observation.'}]
+        resumed=step(paused,history); state=http(base+'/programs')[1][paused]
         assert state['status']=='acting' and state['step_count']==2,state
         tokenize=http(spec['backend']+'/tokenize',{'model':model,'messages':history,'add_generation_prompt':True})
         assert tokenize[1]['count']==resumed['response']['usage']['prompt_tokens']

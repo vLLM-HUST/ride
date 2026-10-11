@@ -57,8 +57,9 @@ python3 scripts/cloud_operator.py accept-policy \
 依赖、Ray 节点资源及真实模型参数。补充入口仍通过 RIDE API 部署进程，
 不创建平台资源，也不重启已运行服务。运行中的产品包不改动。
 
-压力场景：32 个 program，真实模型 KV 固定 64×128=8192 token；观察实际暂停状态，
-释放其他已完成 program 后，同一个暂停 program 的下一轮必须恢复、完成，
+压力场景：32 个 program，真实模型 KV 固定 64×128=8192 token；通过 `state=paused` 观察实际暂停状态（`status` 表示 reasoning/acting 阶段），
+释放已完成 program 后，同一个等待中的暂停 program 必须恢复并完成首轮，
+其下一轮也必须正常完成，
 历史 tokenize 数量一致，最后释放所有 program。180 秒阶段超时即 FAIL。
 保留逐次状态、输入输出、Ray 日志、账本与哈希。
 
