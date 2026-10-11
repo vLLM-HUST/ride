@@ -86,3 +86,5 @@ See [design](docs/FRAMEWORK_SPEC.md), [refactor acceptance](docs/PLATFORM_ENTRY_
 and [historical workspace acceptance](docs/WORKSPACE_E2E_ACCEPTANCE_20261010.md).
 
 Standardized acceptance is built in: `ride verify --controller <instance> --model-service <instance> --output evidence.json`. Add `--lifecycle` to explicitly test stop/restore, `--model <served-name>` for a real inference, and `--baseline <before-restart.json>` to verify management restart adoption. See [acceptance contract](docs/ACCEPTANCE_CONTRACT.md). PASS only covers executed checks; NOT_RUN and performance scope remain explicit.
+
+Coding agents and reviewers: follow [mandatory acceptance procedure](docs/ACCEPTANCE_PROCEDURE.md), using the plan and action templates in acceptance/.

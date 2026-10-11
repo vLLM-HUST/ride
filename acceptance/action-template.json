@@ -1,0 +1,14 @@
+{
+  "schema": "ride.acceptance-action/v1",
+  "run_id": "REQUIRED",
+  "id": "REQUIRED",
+  "exact_command": "REQUIRED",
+  "started_at": null,
+  "finished_at": null,
+  "exit_code": null,
+  "expected": "REQUIRED",
+  "observed": null,
+  "status": "NOT_RUN",
+  "evidence_paths": [],
+  "artifacts_sha256": {}
+}

@@ -1,0 +1,12 @@
+{
+  "schema": "ride.acceptance-plan/v1",
+  "run_id": "REQUIRED",
+  "status": "BLOCKED",
+  "goal": "REQUIRED",
+  "versions": {"ride": "REQUIRED", "controller": "REQUIRED", "model": "REQUIRED"},
+  "platform_authorization": {"raycluster": "existing by default", "create_cluster": false, "user_instruction": "REQUIRED if creating"},
+  "environment": {"ray_jobs_address": "REQUIRED", "device_ownership_evidence": "REQUIRED"},
+  "actions": [{"id": "REQUIRED", "action": "REQUIRED", "exact_command": "REQUIRED", "expected": "REQUIRED", "pass_criteria": ["REQUIRED"], "evidence_paths": ["REQUIRED"], "timeout_seconds": 120}],
+  "cleanup": {"owned_job_ids": [], "preserve_cluster": true},
+  "limits": ["CPU checks are prerequisites, not real NPU E2E", "No performance claim without valid baseline"]
+}
