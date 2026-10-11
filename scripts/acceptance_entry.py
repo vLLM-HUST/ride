@@ -50,6 +50,8 @@ def main():
             time.sleep(2)
         raise TimeoutError(path + ' did not become Ready')
     try:
+        from deployment_identity import verify_live
+        action('deployment_identity', 'Live Coder owner/template/workspace/Ray binding verified', lambda: verify_live(plan))
         action('ray', 'Selected existing Ray Jobs endpoint responds', lambda: client.get_version())
         if args.operation == 'deploy':
             receipt = args.output / 'management-submission.json'
