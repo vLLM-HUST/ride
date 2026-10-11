@@ -2,7 +2,7 @@
 
 # RIDE：可复用控制平面框架与服务平台规范
 
-状态：设计规范 v0.2，2026-10-10。平台 start/get/describe/logs/stop 入口、Controller 与模型服务的 Ray 生命周期已实现并通过 CPU 接口回归；新入口硬件验收待完成。完整公共控制闭环契约仍为目标。
+状态：设计规范 v0.2，2026-10-10。平台 start/get/describe/logs/stop 入口、Controller 与模型服务的 Ray 生命周期已实现并通过 CPU 接口回归；Demo 真实 NPU 控制动作验收已完成，见 Demo 仓库 results/npu-20261011/summary.json；其他硬件或性能结论需对应证据。完整公共控制闭环契约仍为目标。
 
 ## 术语与架构边界（以用户控制面定义为准）
 

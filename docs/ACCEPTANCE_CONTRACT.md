@@ -29,7 +29,7 @@ adoption PASS 必须同时满足：管理进程 PID 改变、持久化 run_id �
 
 ## 能力边界
 
-当前通用层验收控制面、模型、依赖、幂等、生命周期隔离、真实普通请求和重启接管。Controller 调度语义、全部 program 的正确性/公平性、同输入端到端性能、网页交互与认证、安全边界、整 workspace/PVC 恢复仍需专项证据，不能用本契约替代。当前类型实现只有 Request Throttling 与 vLLM；其他 Controller 必须实现对应可观测接口后接入，不能声称已支持。
+当前通用层验收控制面、模型、依赖、幂等、生命周期隔离、真实普通请求和重启接管。Controller 调度语义、全部 program 的正确性/公平性、同输入端到端性能、网页交互与认证、安全边界、整 workspace/PVC 恢复仍需专项证据，不能用本契约替代。当前内置 Request Throttling 与 vLLM，外部 Controller 可通过 ride.controllers 适配器注册；Demo 已完成真实 NPU 请求与控制动作验收。
 
 所有执行验收在 9450 云端进行。Web 验收使用 workspace Coder App，无本地端口转发。开发机器只用于编辑和收回证据。
 
