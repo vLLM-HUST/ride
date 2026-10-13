@@ -95,5 +95,31 @@ identity-json 必须含 namespace、cluster、cluster_uid、pod、pod_uid、remo
 有限集合报告使用完整 makespan/program E2E，固定窗口报告使用预注册测量窗口；
 两者不能混用。raw 原始归档保留 SHA256，图和报告是可重新生成的派生物。
 
-目前数据搬移前置检查已在真机执行，统一报告与身份回收已验证，
-但 RIDE deploy 入口的跨节点 payload 准备仍待实现和独立验收。
+deploy计划可包含以下可选字段；source和目标均必须在冻结计划中明确：
+
+```json
+{
+  "payload": {
+    "namespace": "coder-workspaces",
+    "cluster": "<owned-existing-raycluster>",
+    "cluster_uid": "<observed-uid>",
+    "pod": "<owned-execution-pod>",
+    "pod_uid": "<observed-pod-uid>",
+    "destination": "/workspace/home/<run>/payload",
+    "files": [
+      {"source": "/cloud/control-node/<run>/config.json", "path": "config.json", "sha256": "<frozen-file-sha256>"}
+    ]
+  }
+}
+```
+
+入口在原有部署身份检查后、服务提交前准备payload。
+校验Pod属于指定RayCluster，源hash与计划一致，远端内容逐文件读回一致；
+已有不同文件拒绝覆盖，符号链接或越界路径拒绝，256MiB以上用共享存储。
+控制节点有该目标namespace读取和Pod exec权限才可选此步骤；
+不能让普通工作区ServiceAccount去查询全平台或扩权限绕过403。
+仅将文件准备到计划指定Pod，不会自动给其他Ray节点复制。
+使用本地路径的服务必须显式固定到该节点，或由共享存储保证可读。
+
+真实实验已验证数据搬移前置检查；统一报告与身份回收已验证。
+deploy可选payload已实现并通过云CPU合约检查，完整实际Pod部署组合待验收。

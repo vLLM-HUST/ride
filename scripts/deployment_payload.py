@@ -34,10 +34,12 @@ def prepare_payload(spec):
     base = ['kubectl', '-n', spec['namespace']]
     for kind, name, expected in [('raycluster', spec['cluster'], spec['cluster_uid']),
                                 ('pod', spec['pod'], spec['pod_uid'])]:
-        uid = subprocess.check_output(base + ['get', kind, name, '-o',
-                        'jsonpath={.metadata.uid}'], text=True).strip()
-        if uid != expected:
+        record = json.loads(subprocess.check_output(base + ['get', kind, name, '-o',
+                             'json'], text=True))
+        if record['metadata']['uid'] != expected:
             raise ValueError('Payload target identity changed')
+        if kind == 'pod' and record['metadata'].get('labels', {}).get('ray.io/cluster') != spec['cluster']:
+            raise ValueError('Payload Pod is not a member of the selected RayCluster')
     files = []
     total = 0
     for item in spec['files']:
