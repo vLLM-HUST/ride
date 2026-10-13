@@ -62,6 +62,10 @@ def main():
         from deployment_identity import verify_live
         action('deployment_identity', 'Live Coder owner/template/workspace/Ray binding verified', lambda: verify_live(plan))
         action('ray', 'Selected existing Ray Jobs endpoint responds', lambda: client.get_version())
+        if args.operation == 'deploy' and plan.get('payload'):
+            from deployment_payload import prepare_payload
+            action('payload', 'Explicit Pod identity, source hashes and remote readback match; no overwrite',
+                   lambda: prepare_payload(plan['payload']))
         if args.operation == 'accept-policy':
             from acceptance_policy import pressure, comparison
             prerequisite = json.loads(Path(plan['prerequisite']).read_text())
