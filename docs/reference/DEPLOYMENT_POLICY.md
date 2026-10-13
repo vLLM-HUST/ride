@@ -16,8 +16,8 @@
 - 清理只针对本次 owned Jobs。默认不停止或删除复用的集群、工作区、模板或卷。
 - 历史创建临时模板／工作区的记录保留作追溯，不作为今后部署步骤。
 
-唯一安装部署入口：[INSTALL_AND_DEPLOY](INSTALL_AND_DEPLOY.md)。
-独立 Controller：[开发指南](CONTROLLER_DEVELOPMENT.md)、[Demo 规范](https://github.com/vLLM-HUST/ride-controller-demo/blob/main/DEVELOPMENT.md)。
+唯一安装部署入口：[INSTALL_AND_DEPLOY](../guides/INSTALL_AND_DEPLOY.md)。
+独立 Controller：[开发指南](../guides/CONTROLLER_DEVELOPMENT.md)、[Demo 规范](https://github.com/vLLM-HUST/ride-controller-demo/blob/main/DEVELOPMENT.md)。
 
 现有 disposable CPU CI 会创建临时 Kubernetes Pod 和内部测试 Ray，属于历史测试设施，
 不属于 RIDE 用户部署方案，也不证明 NPU 端到端验收。后续复用已有 Ray 的验收应走

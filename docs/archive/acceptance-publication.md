@@ -1,4 +1,4 @@
-> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+> 当前部署边界：[复用已有 RayCluster](../reference/DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
 
 > 本文涉及旧环境、旧入口或临时资源的内容为历史记录／早期规划，不是当前部署操作指南。已删除资源不得据此重建。
 
@@ -17,4 +17,4 @@ ride verify --controller throttle-main --model-service model-cann --model qwen2.
 
 部署生命周期、program 调度语义、源码身份、Web UI、访问边界和性能分别列在标准目录中。没有专项证据的项保留 NOT_RUN，不能因为部署通过就声称性能通过。complete 仅指部署检查完整，不代表全部专项。两段验收分别保留报告，不拼成单次全通过。当前 RIDE 是可用部署管理入口，仍不声称完整服务化平台或通用 Controller 类型已实现。
 
-源码和规范：https://github.com/vLLM-HUST/ride/blob/main/docs/ACCEPTANCE_CONTRACT.md
+源码和规范：https://github.com/vLLM-HUST/ride/blob/main/docs/reference/ACCEPTANCE_CONTRACT.md

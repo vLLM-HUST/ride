@@ -49,7 +49,7 @@ policy-2使用新实例身份，旧失败及各服务日志归档后只停止旧
 原模型、Demo及主Request Throttling未停止；集群未重启，未新增工作区或模板。
 
 统一入口：scripts/one-click.sh deploy|accept|accept-policy。
-用法与固定判据见[ONE_CLICK_ACCEPTANCE](ONE_CLICK_ACCEPTANCE.md)。
+用法与固定判据见[ONE_CLICK_ACCEPTANCE](../guides/ONE_CLICK_ACCEPTANCE.md)。
 云上证据根目录：/data/users/admin/ride-reacceptance-20261011/run-20261011c/。
 本地仅回收证据：results/reacceptance-20261011/policy-2/，包含CSV、响应、状态、各Ray日志和SHA256。
 部署账本、功能账本和补充账本共同组成此次RIDE有界验收；不得把单一PASS升级为完整上游语义/性能证明。

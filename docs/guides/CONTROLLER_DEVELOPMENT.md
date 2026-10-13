@@ -1,4 +1,4 @@
-> 当前部署边界：[复用已有 RayCluster](DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
+> 当前部署边界：[复用已有 RayCluster](../reference/DEPLOYMENT_POLICY.md)。RIDE 只管理自己的 Jobs；不得按验收新建 Coder 模板／工作区。CPU 测试不替代真实 NPU 端到端验收。
 
 # Controller 开发与 RIDE 接入指南
 
@@ -111,6 +111,6 @@ ride verify --controller throttle-main --model-service model-main \
 未执行项保留 `NOT_RUN`；不得把平台 PASS 写成语义或性能 PASS。
 验收应在隔离、临时、自己拥有的云端环境运行；先保存原始证据，再清理。
 
-源码入口：[命令](../src/ride/__main__.py)、[类型映射](../src/ride/registry.py)、
-[Ray 生命周期与探测](../src/ride/runtime.py)、[验收契约](ACCEPTANCE_CONTRACT.md)。
+源码入口：[命令](../../src/ride/__main__.py)、[类型映射](../../src/ride/registry.py)、
+[Ray 生命周期与探测](../../src/ride/runtime.py)、[验收契约](../reference/ACCEPTANCE_CONTRACT.md)。
 已有类型的操作步骤见 [CLI quickstart](CLI_QUICKSTART.md)。

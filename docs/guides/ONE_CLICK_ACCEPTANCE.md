@@ -1,4 +1,4 @@
-> 当前统一开发契约：[RIDE 开发与变更契约](DEVELOPMENT_CONTRACT.md)。旧文中“新建集群”必须通过 Coder admin 标准 RayCluster 工作区；不得直接创建 Kubernetes RayCluster。用户已授权按契约继续；门禁实现与验收状态须分别记录。
+> 当前统一开发契约：[RIDE 开发与变更契约](../reference/DEVELOPMENT_CONTRACT.md)。旧文中“新建集群”必须通过 Coder admin 标准 RayCluster 工作区；不得直接创建 Kubernetes RayCluster。用户已授权按契约继续；门禁实现与验收状态须分别记录。
 
 # 一键部署和验收入口
 
