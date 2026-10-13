@@ -8,6 +8,13 @@ or workspace per deployment. An existing owner-only Coder App is optional. RIDE'
 
 先从 [已有 Ray 集群的命令行操作说明](docs/CLI_QUICKSTART.md) 开始。
 
+## 项目成果与验收总索引
+
+[RIDE × Request Throttling 一页总览](https://github.com/vLLM-HUST/request-throttling-controller/blob/main/docs/PROJECT_INDEX.md)
+集中展示系统责任边界、官方迁移、三方真机性能、全程图、原始数据索引、
+一键回收/报告及未完成项。RIDE 是控制面，Controller 的性能结果单独验收；
+CPU/CI 和 payload 检查不冒充实际 NPU 端到端证据。
+
 新增 Controller 见 [Controller 开发与接入指南](docs/CONTROLLER_DEVELOPMENT.md)。
 
 安装部署见 [复用已有 RayCluster 的安装与部署脚本](docs/INSTALL_AND_DEPLOY.md)。
