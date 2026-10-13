@@ -71,3 +71,29 @@ python3 scripts/cloud_operator.py accept-policy \
 
 本阶段 PASS 只证明 RIDE 真实 NPU 部署、功能、生命周期及有界压力控制；
 上游完整语义对照与研究性能验收仍按独立契约判断。
+# 跨节点实验数据与结果
+
+工作区挂载 `/workspace/home` 不表示不同节点共享同一份数据。
+部署计划必须记录 payload 的来源、SHA256、实际执行节点以及数据路径。
+在提交服务前，于实际执行 Pod 验证模型、数据、配置和 Python 依赖可读；
+不得只在控制节点检查路径，然后假定 Ray worker 可见。
+
+跨节点有两种明确选择：共享存储，或将固定 payload 显式搬入已授权 Pod。
+不得改建模板、创建新工作区或改变平台存储来绕过应用部署缺口。
+手工搬移只有在记录精确 Pod UID、文件 hash 和结果时才是可追溯证据，
+仍不能称部署入口已自动完成该步骤。
+
+Request Throttling 的标准结果回收、归档和旧绘图入口：
+
+```bash
+make ride-report PYTHON=<cloud-python> RUN=<collected-run> RESULTS=<new-report-directory> \
+  ARGS="--pod-source <identity-json>"
+```
+
+identity-json 必须含 namespace、cluster、cluster_uid、pod、pod_uid、remote_run。
+回收是只读应用证据操作，不管理工作区生命周期。
+有限集合报告使用完整 makespan/program E2E，固定窗口报告使用预注册测量窗口；
+两者不能混用。raw 原始归档保留 SHA256，图和报告是可重新生成的派生物。
+
+目前数据搬移前置检查已在真机执行，统一报告与身份回收已验证，
+但 RIDE deploy 入口的跨节点 payload 准备仍待实现和独立验收。
