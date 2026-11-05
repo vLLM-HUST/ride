@@ -97,6 +97,11 @@ class AdoptionTests(unittest.TestCase):
         self.assertEqual(self.submissions,[])
         self.assertFalse(any(path.endswith('/stop') for path,_ in self.calls))
 
+    def test_invalid_restart_delay_refuses_before_any_stop(self):
+        self.plan['management_restart_delay_seconds']=-1
+        with self.assertRaises(ValueError):self.invoke()
+        self.assertFalse(any(path.endswith('/stop') for path,_ in self.calls))
+
 
 class AdoptionEntryTests(unittest.TestCase):
     def test_standard_acceptance_entry_has_an_adoption_only_scope(self):

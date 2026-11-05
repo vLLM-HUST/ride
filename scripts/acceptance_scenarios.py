@@ -2,6 +2,7 @@
 import concurrent.futures
 import hashlib
 import json
+import math
 import threading
 import time
 from urllib.request import Request, urlopen
@@ -116,6 +117,9 @@ def adoption(plan, client, wait):
     stop_intent=output/'management-stop-intent.json'
     if intent.exists() or stop_intent.exists():
         raise RuntimeError('Adoption intent exists; inspect original Jobs instead of resubmitting')
+    restart_delay=plan.get('management_restart_delay_seconds',0)
+    if type(restart_delay) not in (int,float) or not math.isfinite(restart_delay) or not 0<=restart_delay<=30:
+        raise ValueError('Management restart delay must be finite and between 0 and 30 seconds')
     before=request(plan['address'],'status')
     for kind in ('controllers','model_services'):
         for row in before[kind]:
@@ -134,6 +138,7 @@ def adoption(plan, client, wait):
     while client.call('/api/jobs/'+identifier)['status'] not in ('STOPPED','FAILED','SUCCEEDED'):
         if time.monotonic()>deadline:raise TimeoutError('Management stop timeout')
         time.sleep(1)
+    if restart_delay:time.sleep(restart_delay)
     intent.write_text(json.dumps({'job_id':new,'entrypoint':receipt['entrypoint']}))
     client.submit_job(submission_id=new,entrypoint=receipt['entrypoint'],runtime_env=plan['runtime_env'],entrypoint_num_cpus=.1,entrypoint_resources=plan.get('management_resources',{}))
     # Execution binding only: the frozen input file remains unchanged. The
