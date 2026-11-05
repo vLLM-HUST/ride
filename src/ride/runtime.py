@@ -87,7 +87,8 @@ class Runtime:
                 if spec['backend'] != model['endpoint']:
                     raise ValueError('Controller backend does not match model service')
             self.state['specs'][kind][identifier] = spec
-            job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
+            workspace = re.sub(r'[^a-zA-Z0-9_.-]', '-', self.config['workspace'])[:40]
+            job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + workspace + '-' + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
             self.state['jobs'][key] = job_id
             self.state['submitted_specs'][key] = copy.deepcopy(spec)
             self.operation('start-intent', key, job_id)
