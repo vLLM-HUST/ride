@@ -106,8 +106,20 @@ class ModelStartDeadline(unittest.TestCase):
             ray=Ray();runtime=Runtime({'workspace':'fixture','state_file':str(Path(directory)/'state.json')},ray)
             spec=dict(SPEC,start_not_after='2999-01-01T00:00:00Z')
             first=runtime.start_instance('model_services','a',spec,operation_id='first',expected_job_id=None)
-            with patch('ride.runtime.datetime') as clock:
+            with patch('ride.runtime.datetime',wraps=datetime) as clock:
                 clock.now.return_value=datetime(3000,1,1,tzinfo=timezone.utc)
                 self.assertEqual(runtime.start_instance('model_services','a',spec,operation_id='first',expected_job_id=None),first)
                 with self.assertRaises(ValueError):runtime.start_instance('model_services','b',spec,operation_id='second',expected_job_id=None)
             self.assertEqual(len(ray.submitted),1)
+
+class SDKStartDeadlineCapability(unittest.TestCase):
+    def test_deadline_is_not_silently_ignored_by_an_older_manager(self):
+        from ride.sdk import RideClient
+        calls=[]
+        def transport(method,path,body):
+            calls.append(method)
+            return {'protocol_version':'1','conditional_start':True}
+        sdk=RideClient('http://ride.invalid',transport=transport)
+        with self.assertRaisesRegex(ValueError,'start_deadline'):
+            sdk.models.start('late',dict(SPEC,start_not_after='2999-01-01T00:00:00Z'),operation_id='late',expected_job_id=None)
+        self.assertEqual(calls,['GET'])

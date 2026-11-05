@@ -46,7 +46,9 @@ class ResourceClient:
     def start(self,name,spec,*,operation_id,expected_job_id):
         if not isinstance(operation_id,str) or not 0<len(operation_id)<=256:raise ValueError('Operation identity required')
         if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id):raise ValueError('Prior Job identity required')
-        self.client.require_capabilities('conditional_start')
+        required=['conditional_start']
+        if isinstance(spec,dict) and 'start_not_after' in spec:required.append('start_deadline')
+        self.client.require_capabilities(*required)
         return self.client.post(self.path(name)+'/start',dict(spec=spec,operation_id=operation_id,expected_job_id=expected_job_id))
     def stop(self,name,*,expected_job_id):
         if not isinstance(expected_job_id,str) or not expected_job_id:raise ValueError('Exact Job identity required')
