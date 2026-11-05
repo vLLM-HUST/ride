@@ -60,13 +60,11 @@ SDK 提供：模型管理客户端、Controller 发现/调用客户端、身份/
 
 旧接口兼容；新安全能力通过 capability 显式协商。业务请求不设 timeout、不自动重试。管理探测和整体资源期限另计，不能混成业务 SLO。
 
-## 7. Current implementation and known gaps
+## 7. 当前实现与边界
 
-The canonical roadmap owns current status. SDK software: 40 tests PASS. Independent Instance package: 9 tests PASS. Independent KV package: 34 tests and seven same-input migration comparisons PASS. Installed-package SDK/KV/Instance HTTP-handler fixtures PASS, including UNKNOWN-copy stop protection. These are software checks with fake execution/model/storage, not real Ray/NPU acceptance.
+当前版本、测试、实机状态与下一项只在统一路线图维护，避免本文重复过期计数。三个独立包已通过公共SDK/API接入真实Ray和模型。限流层新增预声明模型池的可用性管理，原版调度核心逐文件SHA固定。缩容区分启动、服务、排空、停止状态；停止中的作业仍占资源上限，剩余Ready副本达到下限后才排空或停止。
 
-Real KV active copy failed in r19 and is still unresolved. Real independent-package automatic scaling and performance are NOT_RUN. Existing uncommitted operational changes must be integrated before cloud acceptance.
-
-The r21 FIFO reproduction belongs to the old cooperative simple request implementation, not verified against original ThunderAgent. The start ownership race is covered by RIDE conditional start and Instance software regressions, not yet by real cloud acceptance. Original Request Throttling currently declares static backend topology; dynamic membership must be implemented and tested explicitly before claiming cooperative autoscaling compatibility.
+真实生成、多轮输出继承、稳定扩缩及KV/Instance进程隔离已获有限功能验证，不证明任务答案正确率或性能改善。原生vLLM后端只读，不支持外部KV复制；r19失败未解决。限流层采用保守全局排空，不能恢复非空原版Router运行态。管理接管及只读观测故障恢复仍按路线图验收，不承诺多副本高可用。
 
 ## 8. 验收顺序
 

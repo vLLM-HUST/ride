@@ -6,10 +6,10 @@
 
 | 项目 | 责任 | 本轮实际进度 | 下一项 |
 |---|---|---|---|
-| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.1；53项本地回归通过；Linux软件CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)尚未合并，软件回执触发组织证据保管review | 标准云端安装与管理服务部署 |
-| request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 从main单独建分支codex/independent-request-controller；新增托管入口；83通过、4可选项跳过；四包隔离安装软件协作通过；代码1ff83cb已推送，创建PR两次HTTP500，未创建；远端CI未验 | 真模型多轮、工具等待、排空与停止隔离 |
-| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 独立仓库；0.1.1；11项本地测试通过。纯能力接口避免状态聚合回调本控制循环；旧0.1.0 Linux CI通过，新提交CI按回执核对 | 真模型Ready后激活及自动扩缩 |
-| [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 独立仓库；0.1.1；38项本地测试通过，七场景迁移对照一致。已知Ascend主动复制仍不支持；原生vLLM只读适配不声称缓存查询/复制能力 | 先用真实引擎验只读能力与扩缩协作；支持复制的后端另验 |
+| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.2 ae47faf；57项本地回归及Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)尚未合并，软件回执触发组织证据保管review | 管理服务重启接管，保留现有Job与控制循环 |
+| request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 分支codex/independent-request-controller，1ff83cb；83通过、4可选项跳过；创建PR两次HTTP500未创建；远端未出现此分支CI；r35真实三组两轮和排空协作通过 | 空状态进程重启；非空状态恢复仍不支持 |
+| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.2 ce69cd1；17项本地回归与Linux CI通过；r35真实稳定1→2→1、本进程停止恢复通过 | 只读观测失败后恢复、管理重启接管 |
+| [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.2 b08db35；39项本地回归与Linux CI通过；r35只读后端、排空协作、本进程停止恢复通过；七场景迁移对照保留 | 现有支持动作的后端单独验真实KV；当前copy=false |
 | ride-cooperative-controllers | 历史来源与集成证据 | 保留原件，不再添加正式策略；r19失败不重标 | 供迁移比对，不维持第二份开发计划 |
 | ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
 
@@ -20,8 +20,8 @@
 - [x] M2（软件）：独立实例Controller安装/插件发现、Ready后激活、准确Job停止、工具等待及双排空回归。
 - [x] M3（软件）：独立KV包、后端接口、不支持动作前拒绝、UNKNOWN重启保护、源与目标覆盖验证及来源逐SHA。
 - [x] M4（软件）：既有请求仓库的独立托管入口接公共SDK；事前声明模型池激活/排空/移除；旧任务续轮不被新任务等待阻塞；未知结果不猜排空；固定原版调度源逐SHA。新入口采用保守全局排空，原入口不替换；不宣称性能等价或原版运行态恢复。
-- [ ] M5.1：固定版本的跨仓标准云端安装、真实Ray Jobs托管、身份、日志、启停/隔离与管理接管。
-- [ ] M5.2：真实模型多轮输出、自动1→2→1、工具等待和排空；原生vLLM只读KV明确拒绝不支持动作。该项通过也不核销实际KV复制。
+- [ ] M5.1：r35已完成跨仓标准安装、三个独立Ray Jobs、身份/日志、KV与Instance停止隔离及恢复；管理服务接管、限流层空状态重启未实测，不整体核销。
+- [x] M5.2（功能）：r35两个Qwen3-0.6B模型，11次真实生成、4个任务/3个两轮；输出继承、稳定1→2→1、工具等待和排空通过；仅启动两个模型且原A保留，KV copy不支持前拒绝。没有答案正确率、真实KV复制或性能结论。
 - [ ] M5.3：在已存在且明确支持的后端上验证真实KV动作/目标续轮/源保留。r19主动复制失败仍开放，不以扩大后端种类代替解决。
 - [ ] M6：同条件完整批次、原生强基线、至少三组交替重复和留出；收益、负结果与开销分别报告，最后按明确授权发布。
 
@@ -31,6 +31,14 @@
 
 本地研究快照上的原型475f60d及1661通过/5跳过保留；不把整个未发布研究历史塞进main。交付分支从9a8501e起，单独验证83通过/4跳过。缺少的Extension Manager和Ray可选项不算通过。
 
-RIDE Linux首轮3个进程身份检查失败，完整命令读取后剩1个退出竞态；最终53项软件CI通过。两次失败与修改分别保留，不以Mac通过替代Linux。KV/实例早期CI缺构建依赖的失败保留。
+RIDE Linux首轮3个进程身份检查失败，完整命令读取后剩1个退出竞态；最终57项软件CI通过。两次失败与修改分别保留，不以Mac通过替代Linux。KV/实例早期CI缺构建依赖的失败保留。
 
 旧r19物理进程终态Unknown不由本轮新的实时卡位检查回填。新资源按实际对象、全局物理唯一性和独立绝对截止重新冻结；不复活旧run。B1/SWE本轮不启动，其他研究聊天保持独立；不动shuhao或他人活跃资源。固定RayCluster中释放模型预约不等于释放平台申请卡时。
+
+## 当前真实证据与下一项
+
+r35使用RIDE ae47faf、Instance ce69cd1、KV b08db35、Request 1ff83cb，原版ThunderAgent固定7ddc861。标准one-click部署后，由Instance根据真实请求需求启动、缩容模型。7次限流层生成与4次直连诊断完成，三个两轮任务逐字继承上一轮真实输出。KV和Instance各停止、恢复一次，存活模型Job不变。9个自有Job归档终止，工作区、RayCluster、Pod、专属PVC/PV删除且物理卡释放。原件与逐SHA分析保存在私有运行目录，回执归[主计划](https://ocnkis1vvvv6.feishu.cn/docx/UBwqdzACYoxrmuxNWaFcwJXOnNG)，不公开原始环境或凭据。
+
+r33暴露KV模块入口错误，先失败回归后修为0.1.2。r34完成6次生成、两个两轮，但缩容连续停止两个模型再重启；原件保留。Instance0.1.2区分停止中的作业与后续容量，保留最小Ready副本，限制未终止的资源预约；r35增加仅两次启动、原模型保留、三个控制间隔稳定的断言后通过。不将r34失败重标为通过。
+
+下一项是管理服务重启和限流层空状态重启。当前Instance循环遇到一次观测异常就退出；先补只读连接失败后重新观测的回归，动作结果未知和身份冲突仍停止，不自动重投。管理接管沿既有RIDE标准验收入口扩展，先软件再独立实机窗口。KV实际数据动作与性能仍独立开放。
