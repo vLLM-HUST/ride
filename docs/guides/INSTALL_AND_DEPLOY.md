@@ -68,3 +68,11 @@ scripts/one-click.sh accept-adoption /absolute/frozen-plan.json /absolute/new-ev
 这项PASS只说明管理接管，不说明模型提交、限流层运行态恢复或性能。控制器必须自行处理只读观测暂时失败；不能忽略其错误来取得通过。限流层仅允许已释放全部任务、无在途和未知请求的空状态重启；非空Router恢复仍不支持。
 
 故障注入可在冻结计划声明`management_restart_delay_seconds`，默认0，范围0–30秒；用于明确观测停止与重启之间的窗口，计入运维耗时，不作为策略收益。
+
+## 文件传输中断的边界
+
+`scripts/deployment_payload.py`提供`initialize_staging(destination, identity)`和`stage_archive(archive, destination, identity, expected_sha256)`，供部署操作方在提交任何Job前准备源码。identity明确绑定run、workspace和冻结plan SHA；目录必须私有、非符号链接，未知已有目录和身份冲突拒绝，不凭目录名推断平台归属。平台owner、Pod UID和RayCluster关系仍由既有身份门禁核验。
+
+同一归档可补齐缺失文件，已有相同文件保留，任何内容、模式、归档身份或路径冲突都在写入前拒绝。完整临时文件以排他方式发布，避免留下半个最终文件；原子写入中断后可重新核验同一归档。随后仍调用既有`prepare_payload`，核精确Pod/cluster身份、逐文件SHA和目标读回。
+
+这只适用于冻结文件阶段，既不启动服务，也不重试模型或业务提交。SSH失败先保存原失败并查原目录/归档/回执，确认相同身份和SHA后才继续文件阶段；未知Job仍按原Job ID查账。文件阶段成功也不代表实际镜像、Controller功能或性能通过。r38在该阶段失败且0模型/0业务，历史记录保留；新恢复路径尚须独立云端验证。
