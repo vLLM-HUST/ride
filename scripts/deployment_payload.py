@@ -12,6 +12,9 @@ if not str(root).startswith('/workspace/home/') or '..' in root.parts:
  raise ValueError('Destination outside workspace home')
 checked=[]
 for item in p['files']:
+ mode=item.get('mode')
+ if mode is not None and (type(mode) is not int or mode not in (0o644,0o755)):
+  raise ValueError('Only explicit regular or executable file modes are supported')
  rel=pathlib.Path(item['path'])
  if rel.is_absolute() or '..' in rel.parts:raise ValueError('Unsafe relative path')
  target=root/rel
@@ -21,13 +24,15 @@ for item in p['files']:
  if digest!=item['sha256']:raise ValueError('Payload checksum mismatch')
  if target.exists() and (not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest()!=digest):
   raise ValueError('Existing destination differs; refusing overwrite')
- checked.append((target,data,digest))
-for target,data,digest in checked:
+ checked.append((target,data,digest,mode))
+for target,data,digest,mode in checked:
  target.parent.mkdir(parents=True,exist_ok=True)
  if not target.exists():
   with target.open('xb') as f:f.write(data)
  if hashlib.sha256(target.read_bytes()).hexdigest()!=digest:raise ValueError('Readback differs')
-print(json.dumps({'files':[{'path':str(t),'sha256':h} for t,d,h in checked]}))
+ if mode is not None:target.chmod(mode)
+ if mode is not None and target.stat().st_mode & 0o7777 != mode:raise ValueError('File mode readback differs')
+print(json.dumps({'files':[{'path':str(t),'sha256':h,'mode':t.stat().st_mode & 0o7777} for t,d,h,m in checked]}))
 '''
 
 def prepare_payload(spec):
@@ -43,6 +48,9 @@ def prepare_payload(spec):
     files = []
     total = 0
     for item in spec['files']:
+        mode = item.get('mode')
+        if mode is not None and (type(mode) is not int or mode not in (0o644, 0o755)):
+            raise ValueError('Only explicit regular or executable file modes are supported')
         data = Path(item['source']).read_bytes()
         total += len(data)
         if total > 256 * 1024 * 1024:
@@ -51,7 +59,7 @@ def prepare_payload(spec):
         if digest != item['sha256']:
             raise ValueError('Source checksum differs from frozen plan')
         files.append({'path': item['path'], 'sha256': digest,
-                      'data': base64.b64encode(data).decode()})
+                      'data': base64.b64encode(data).decode(), 'mode': mode})
     response = subprocess.check_output(base + ['exec', '-i', spec['pod'], '--',
                    'python3', '-c', REMOTE], input=json.dumps(
                        {'destination': spec['destination'], 'files': files}).encode(), timeout=120)

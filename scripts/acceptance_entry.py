@@ -49,6 +49,10 @@ def main():
         deadline = time.monotonic() + plan.get('timeout', 900)
         while time.monotonic() < deadline:
             try:
+                if path == 'status':
+                    management = client.call('/api/jobs/' + plan['management_job_id'])
+                    if management.get('status') in ('FAILED', 'STOPPED', 'SUCCEEDED'):
+                        raise RuntimeError('Management Job terminated before readiness: ' + management['status'])
                 record = request(plan['address'], path)
                 if path == 'status' or record.get('ready') is True:
                     return record

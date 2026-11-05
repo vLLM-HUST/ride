@@ -18,9 +18,16 @@ class Runtime:
         self.lock = threading.RLock()
         self.path = Path(config['state_file'])
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.executor = config.get('deployment', 'ray')
+        if self.executor not in ('ray', 'local'):
+            raise ValueError('Unsupported process executor')
         if client is None:
-            from ray.job_submission import JobSubmissionClient
-            client = JobSubmissionClient(config['ray_address'])
+            if self.executor == 'local':
+                from .local_process import LocalProcessClient
+                client = LocalProcessClient(self.path.parent / (self.path.stem + '-processes'))
+            else:
+                from ray.job_submission import JobSubmissionClient
+                client = JobSubmissionClient(config['ray_address'])
         self.client = client
         self.state = json.loads(self.path.read_text()) if self.path.exists() else {'run_id': uuid.uuid4().hex, 'jobs': {}, 'operations': []}
         self.state.setdefault('specs', {'controllers': {}, 'model_services': {}})
@@ -75,8 +82,18 @@ class Runtime:
             spec = copy.deepcopy(old or {'id': identifier})
             spec.update(changes or {})
             spec['id'] = identifier
-            if spec.get('executor', 'ray') != 'ray':
-                raise ValueError('Only Ray execution is implemented')
+            prefix = spec.get('job_name_prefix')
+            if 'job_name_prefix' in spec and (not isinstance(prefix, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}', prefix)):
+                raise ValueError('Invalid Ray Job name prefix')
+            if spec.get('executor', self.executor) != self.executor:
+                raise ValueError('Instance executor must match management deployment')
+            if self.executor == 'local':
+                if kind != 'controllers':
+                    raise ValueError('Local execution supports Controller only; model lifecycle stays external')
+                if spec.get('resources') or spec.get('num_gpus', 0) or spec.get('num_cpus', 0):
+                    raise ValueError('Local Controller resources are provided by the devbox, not Ray reservations')
+                if set(spec.get('runtime_env', {})) - {'env_vars'}:
+                    raise ValueError('Local runtime_env supports env_vars only')
             if old and changes and spec != old:
                 raise ValueError('Instance configuration conflict; use a different instance name')
             cmd = command(kind, spec)
@@ -100,6 +117,8 @@ class Runtime:
                     raise ValueError('Controller backend does not match model service')
             self.state['specs'][kind][identifier] = spec
             job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
+            if prefix:
+                job_id = prefix + '-' + uuid.uuid4().hex[:12]
             self.state['jobs'][key] = job_id
             self.state['submitted_specs'][key] = copy.deepcopy(spec)
             if conditional:
@@ -166,7 +185,7 @@ class Runtime:
             if not spec: raise ValueError('Unknown instance')
             job_id = self.state['jobs'].get(self.key(kind, identifier))
         record = {'id': identifier, 'type': spec.get('type', spec.get('entrypoint')), 'kind': kind,
-            'endpoint': spec['endpoint'], 'job_id': job_id, 'job_status': 'NOT_STARTED', 'ready': False}
+            'executor': self.executor, 'endpoint': spec['endpoint'], 'job_id': job_id, 'job_status': 'NOT_STARTED', 'ready': False}
         if job_id:
             try: record['job_status'] = self.client.get_job_status(job_id).value
             except Exception as error: record['job_status'] = 'UNKNOWN'; record['job_error'] = type(error).__name__
@@ -199,9 +218,8 @@ class Runtime:
                 except Exception as error: record['probe_error'] = type(error).__name__
         return record
 
-    @staticmethod
-    def capabilities():
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'inspect':True,'start_controller':True,'start_model_service':True,'mutate':True}
+    def capabilities(self):
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
 
     def snapshot(self):
         with self.lock:

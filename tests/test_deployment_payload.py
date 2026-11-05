@@ -28,6 +28,8 @@ class PayloadTests(unittest.TestCase):
 
     def test_existing_conflict_and_traversal_preserve_content(self):
         with tempfile.TemporaryDirectory() as directory:
+            # macOS /var is a symlink; test an ordinary directory, not the
+            # separately forbidden symlink-destination case.
             directory = str(Path(directory).resolve())
             code = module.REMOTE.replace('/workspace/home/', directory + '/')
             destination = directory + '/payload'
@@ -44,3 +46,21 @@ class PayloadTests(unittest.TestCase):
             self.assertNotEqual(run([item(b'escape', '../outside')]).returncode, 0)
             self.assertEqual(Path(destination, 'config.json').read_bytes(), b'original')
             self.assertFalse(Path(directory, 'outside').exists())
+
+    def test_explicit_executable_mode_and_invalid_mode(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory=str(Path(directory).resolve())
+            code=module.REMOTE.replace('/workspace/home/',directory+'/')
+            root=directory+'/payload'
+            def run(mode):
+                data=b'#!/bin/sh\nexit 0\n'
+                item=dict(path='service',data=base64.b64encode(data).decode(),
+                          sha256=hashlib.sha256(data).hexdigest(),mode=mode)
+                return subprocess.run([sys.executable,'-c',code],input=json.dumps(
+                    dict(destination=root,files=[item])).encode(),capture_output=True)
+            self.assertEqual(run(0o755).returncode,0)
+            self.assertEqual(Path(root,'service').stat().st_mode & 0o777,0o755)
+            self.assertEqual(run(0o755).returncode,0)
+            for mode in (0o4755,0o777,True,'755'):
+                with self.subTest(mode=mode):self.assertNotEqual(run(mode).returncode,0)
+            self.assertEqual(Path(root,'service').stat().st_mode & 0o777,0o755)
