@@ -11,6 +11,7 @@
 | instance-controller | 独立扩缩 Controller | 独立包/仓库、entry point、SDK 调用、真实入口测试 | [Independent private repository](https://github.com/yancanmao/instance-controller); 9 tests and isolated installed-package fixture PASS; cloud/NPU NOT_RUN |
 | [kv-controller](https://github.com/yancanmao/kv-controller) | 独立 KV Controller | 迁移已定接口与保守状态机，后端能力适配 | 独立仓库已推送；34项软件测试及跨包安装fixture通过；物理复制未修复 |
 | ride-cooperative-controllers | 历史来源与集成证据 | 标记迁移、保持原件；停止在合集新增正式策略 | 88软件通过，整体硬件未验收 |
+| gennova-d | GenNova integration using shared RIDE and Controller packages | Model-plugin / public-SDK compatibility, then pinned dependency upgrade | Candidate software validation only; GenNova Ray/NPU upgrade NOT_RUN; GenNova-specific tasks maintained downstream |
 | ride-website | 解释架构与真实验收范围 | 消费本设计与证据，区分目标/实现/已测 | 本轮不发布；不写完成收益 |
 
 ## 按顺序推进的里程碑

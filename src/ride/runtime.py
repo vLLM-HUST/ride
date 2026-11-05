@@ -212,7 +212,7 @@ class Runtime:
 
     @staticmethod
     def capabilities():
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'inspect':True,'start_controller':True,'start_model_service':True,'mutate':True}
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'model_service_plugins':True,'inspect':True,'start_controller':True,'start_model_service':True,'mutate':True}
 
     def snapshot(self):
         with self.lock:
