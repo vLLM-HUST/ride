@@ -18,6 +18,20 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class PayloadTests(unittest.TestCase):
+    def test_remote_partial_publication_never_leaves_a_partial_final_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory=str(Path(directory).resolve());root=directory+'/payload'
+            code=module.REMOTE.replace('/workspace/home/',directory+'/')
+            raw=b'frozen-data';item=dict(path='config.json',data=base64.b64encode(raw).decode(),sha256=hashlib.sha256(raw).hexdigest(),mode=0o644)
+            payload=json.dumps(dict(destination=root,files=[item])).encode()
+            interrupted='import os\ndef stopped(*args,**kwargs):raise OSError("publication interrupted")\nos.link=stopped\n'+code
+            first=subprocess.run([sys.executable,'-c',interrupted],input=payload,capture_output=True)
+            self.assertNotEqual(first.returncode,0)
+            self.assertFalse(Path(root,'config.json').exists())
+            second=subprocess.run([sys.executable,'-c',code],input=payload,capture_output=True)
+            self.assertEqual(second.returncode,0,second.stderr)
+            self.assertEqual(Path(root,'config.json').read_bytes(),raw)
+
     def test_other_cluster_pod_rejected_before_exec(self):
         plan = dict(namespace='test', cluster='owned', cluster_uid='c', pod='p',
                     pod_uid='p-id', files=[], destination='/workspace/home/test')

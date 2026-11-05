@@ -110,7 +110,7 @@ def stage_archive(archive, destination, identity, expected_sha256):
             'files': [{'path': str(target.relative_to(root)), 'sha256': digest, 'mode': mode} for target, data, digest, mode in checked]}
 
 REMOTE = r'''
-import base64,hashlib,json,pathlib,sys
+import base64,hashlib,json,os,pathlib,sys,tempfile
 p=json.load(sys.stdin);root=pathlib.Path(p['destination'])
 if not str(root).startswith('/workspace/home/') or '..' in root.parts:
  raise ValueError('Destination outside workspace home')
@@ -132,7 +132,18 @@ for item in p['files']:
 for target,data,digest,mode in checked:
  target.parent.mkdir(parents=True,exist_ok=True)
  if not target.exists():
-  with target.open('xb') as f:f.write(data)
+  temporary=None
+  try:
+   with tempfile.NamedTemporaryFile(prefix='.ride-payload-',dir=target.parent,delete=False) as f:
+    temporary=pathlib.Path(f.name);f.write(data);f.flush();os.fsync(f.fileno())
+   mask=os.umask(0);os.umask(mask)
+   temporary.chmod(mode if mode is not None else 0o666 & ~mask)
+   try:os.link(temporary,target)
+   except FileExistsError:
+    if target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest()!=digest:
+     raise ValueError('Existing destination differs; refusing overwrite')
+  finally:
+   if temporary is not None:temporary.unlink(missing_ok=True)
  if hashlib.sha256(target.read_bytes()).hexdigest()!=digest:raise ValueError('Readback differs')
  if mode is not None:target.chmod(mode)
  if mode is not None and target.stat().st_mode & 0o7777 != mode:raise ValueError('File mode readback differs')
