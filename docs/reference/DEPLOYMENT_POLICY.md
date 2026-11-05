@@ -32,7 +32,14 @@ source intake is recorded in `evidence/gennova-local-intake.json`. It is selecte
 explicitly with deployment=local; Ray remains the default. Local execution accepts
 Controllers only, installs dependencies beforehand, and reserves no Ray/NPU resources.
 The external model keeps its native deployment lifecycle. Use the existing
-`scripts/one-click.sh local-start|local-stop PLAN OUTPUT` entry; runtime_env supports
+`scripts/one-click.sh local-start|local-restart|local-stop PLAN OUTPUT` entry; runtime_env supports
 env_vars only. Unknown process identity refuses signals and duplicate submission.
 The local operational stop wait is15 seconds, separate from business waiting.
 Cloud local lifecycle and real model evidence must be recorded separately from Ray acceptance.
+
+`local-restart` restarts only a running verified local management process. It
+requires the same deployment configuration and healthy existing Controllers;
+it does not start or stop Controllers. The new manager must adopt the same run,
+workspace and Controller Job IDs. Unknown submission outcomes retain the new
+manager identity and refuse automatic resubmission. This is explicit operational
+restart, not automatic crash recovery or high availability.

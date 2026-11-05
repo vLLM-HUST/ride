@@ -54,3 +54,25 @@ Demo 单张 NPU 真实 vLLM 请求、并发限制、停止和恢复的结果：
 [验收摘要](https://github.com/vLLM-HUST/ride-controller-demo/blob/main/results/npu-20261011/summary.json)。
 上述两个包装脚本尚未独立云端执行；底层 ride start / Controller / model-service 命令已经云端验收。
 脚本不会建立新的集群。CPU 检查不能代替真实 NPU 端到端验收。
+
+## 显式 local Controller 部署
+
+已有 CPU 工作区可使用 local executor；模型保持外部原生部署，Ray 仍是默认执行器。
+配置须明确 `deployment: local`、绝对路径 `state_file`、`workspace`、`controllers`，
+并设置 `model_services: []`。插件和依赖先安装，local 不预留 Ray 或 NPU 资源。
+
+```sh
+RIDE_EXECUTOR=local bash scripts/install.sh /persistent/path/ride-venv
+export RIDE_PYTHON=/persistent/path/ride-venv/bin/python
+bash scripts/one-click.sh local-start /absolute/path/local-plan.json /new/evidence/start
+bash scripts/one-click.sh local-restart /absolute/path/local-plan.json /new/evidence/restart
+bash scripts/one-click.sh local-stop /absolute/path/local-plan.json /new/evidence/stop
+```
+
+local-plan.json 使用现有字段：`config` 指向上述配置，`management_endpoint` 为
+loopback HTTP origin（例如 `http://127.0.0.1:19100`），`readiness_timeout_seconds`
+为不超过300秒的运维期限。每次证据目录使用新路径。
+
+`local-restart` 只重启管理进程，不重启 Controller。要求配置不变、管理身份可信、
+Controller 全部健康；重启后核对原 run_id、workspace、Controller Job ID 和就绪状态。
+配置冲突、身份未知、提交结果未知均保留现场并拒绝自动重投。它不提供自动崩溃恢复或HA。

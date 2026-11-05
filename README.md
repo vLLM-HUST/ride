@@ -81,9 +81,11 @@ Job. Persistent `.ride/state.json` supports management restart/adoption.
 
 ## Current boundaries
 
-Ray execution only; a local executor, generic third-party discovery, full common
-control-loop contracts, graceful drain, high availability, authentication inside
-the listener, and cross-Controller arbitration are not implemented. Restrict the
+Ray remains the default. Explicit local execution supports Controllers with external
+models and the same plugin discovery. Use one-click.sh local-start|local-restart|local-stop;
+local-restart preserves running Controllers and their state. Full common control-loop
+contracts, graceful drain, high availability, authentication inside the listener, and
+cross-Controller arbitration are not implemented. Restrict the
 listener to the workspace and use owner-only Coder access. A trusted owner can
 provide runtime environments and model arguments. Stop can interrupt in-flight
 requests; it is not graceful drain.
