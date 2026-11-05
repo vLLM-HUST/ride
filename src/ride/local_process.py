@@ -44,6 +44,14 @@ def _matches(record, directory):
         return False
 
 
+def _terminal_after_exit(directory, previous):
+    latest = json.loads((directory / 'process.json').read_text())
+    if (latest.get('status') in ('STOPPED','SUCCEEDED','FAILED')
+            and all(latest.get(key)==previous.get(key) for key in ('pid','birth','token'))):
+        return latest['status']
+    return None
+
+
 class LocalProcessClient:
     def __init__(self, root):
         self.root = Path(root).resolve()
@@ -99,6 +107,8 @@ class LocalProcessClient:
         record = json.loads((directory / 'process.json').read_text())
         status = record['status']
         if status == 'RUNNING' and not _matches(record, directory):
+            terminal = _terminal_after_exit(directory, record)
+            if terminal is not None:return SimpleNamespace(value=terminal)
             raise RuntimeError('Owned process identity unavailable or changed')
         return SimpleNamespace(value=status)
 
@@ -111,6 +121,7 @@ class LocalProcessClient:
         if record['status'] in ('STOPPED','SUCCEEDED','FAILED'):
             return False
         if not _matches(record, directory):
+            if _terminal_after_exit(directory, record) is not None:return False
             raise RuntimeError('Refusing signal: owned process identity unavailable or changed')
         os.killpg(record['pid'], signal.SIGTERM)
         for _ in range(250):

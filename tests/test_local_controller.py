@@ -119,3 +119,39 @@ class ProcessIdentityWidthTests(unittest.TestCase):
             return SimpleNamespace(stdout=full if '-ww' in command else full[:80])
         with patch('ride.local_process.os.getpgid',return_value=321),patch('ride.local_process.subprocess.run',side_effect=ps):
             self.assertTrue(_matches(record,directory))
+
+class ProcessExitRaceTests(unittest.TestCase):
+    def _client(self,directory):
+        from ride.local_process import LocalProcessClient
+        client=LocalProcessClient(directory);root=Path(directory)/'owned';root.mkdir()
+        record={'status':'RUNNING','pid':321,'birth':'fixture-birth','token':'fixture-token'}
+        (root/'process.json').write_text(json.dumps(record))
+        return client,root,record
+
+    def test_completed_worker_between_snapshot_and_identity_check_is_terminal(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client,root,record=self._client(directory)
+            def exited(*args):
+                (root/'process.json').write_text(json.dumps(dict(record,status='FAILED',exit_code=7)))
+                return False
+            with patch('ride.local_process._matches',side_effect=exited):
+                self.assertEqual(client.get_job_status('owned').value,'FAILED')
+
+    def test_completed_worker_during_stop_is_not_signalled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client,root,record=self._client(directory)
+            def exited(*args):
+                (root/'process.json').write_text(json.dumps(dict(record,status='SUCCEEDED',exit_code=0)))
+                return False
+            with patch('ride.local_process._matches',side_effect=exited),patch('ride.local_process.os.killpg') as signal:
+                self.assertFalse(client.stop_job('owned'));signal.assert_not_called()
+
+    def test_replaced_terminal_identity_is_still_unknown_and_never_signalled(self):
+        with tempfile.TemporaryDirectory() as directory:
+            client,root,record=self._client(directory)
+            def replaced(*args):
+                (root/'process.json').write_text(json.dumps(dict(record,status='FAILED',token='foreign')))
+                return False
+            with patch('ride.local_process._matches',side_effect=replaced),patch('ride.local_process.os.killpg') as signal:
+                with self.assertRaises(RuntimeError):client.stop_job('owned')
+                signal.assert_not_called()
