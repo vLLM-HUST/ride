@@ -8,6 +8,13 @@ def controller_adapter(name):
     return matches[0].load() if matches else None
 
 
+def model_service_adapter(name):
+    if name in ('vllm','mock-vllm'):return None
+    matches=list(entry_points(group="ride.model_services", name=name))
+    if len(matches)>1:raise ValueError("Duplicate model service type: " + name)
+    return matches[0].load() if matches else None
+
+
 def command(kind, spec):
     name = spec.get('type', spec.get('entrypoint'))
     if kind == 'controllers' and name == 'request-throttling':
@@ -18,6 +25,9 @@ def command(kind, spec):
             '--enable', '--transport', spec.get('transport', 'no-keepalive')])
     if kind == 'controllers':
         adapter=controller_adapter(name)
+        if adapter is not None:return adapter.command(spec)
+    if kind == 'model_services':
+        adapter=model_service_adapter(name)
         if adapter is not None:return adapter.command(spec)
     if kind == 'model_services' and name == 'mock-vllm':
         if not spec.get('model') or not spec.get('endpoint'):raise ValueError('Mock service requires model and endpoint')

@@ -114,3 +114,11 @@ ride verify --controller throttle-main --model-service model-main \
 源码入口：[命令](../../src/ride/__main__.py)、[类型映射](../../src/ride/registry.py)、
 [Ray 生命周期与探测](../../src/ride/runtime.py)、[验收契约](../reference/ACCEPTANCE_CONTRACT.md)。
 已有类型的操作步骤见 [CLI quickstart](CLI_QUICKSTART.md)。
+
+## Native model services
+
+`ride.model_services` entry points expose the same small `command(spec)` and
+`probe(spec)` contract for external native model packages. A model probe returns
+`model_ready`, with optional health/identity/status observations. RIDE retains
+Job ownership, state, resources, logs and lifecycle. Built-in vllm/mock-vllm
+behavior is unchanged; model packages own their configuration and public CLI.

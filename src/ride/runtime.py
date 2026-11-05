@@ -8,7 +8,7 @@ import uuid
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
-from .registry import command, controller_adapter
+from .registry import command, controller_adapter, model_service_adapter
 
 class Runtime:
     def __init__(self, config, client=None):
@@ -145,7 +145,17 @@ class Runtime:
         if kind == 'model_services':
             record['model'] = spec['model']
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
-            record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
+            adapter=model_service_adapter(record['type'])
+            if adapter is not None:
+                if record['job_status']=='RUNNING':
+                    try:
+                        observed=adapter.probe(spec)
+                        record['ready']=observed.get('model_ready') is True
+                        for field in ('health','identity','status'):
+                            if field in observed:record[field]=observed[field]
+                    except Exception as error:record['probe_error']=type(error).__name__
+            else:
+                record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
             if spec.get('backend') is not None:
                 record['backend'] = spec['backend']
