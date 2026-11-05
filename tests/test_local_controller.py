@@ -106,3 +106,15 @@ class LocalController(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             runtime=Runtime(self.config(Path(directory)))
             self.assertFalse(runtime.snapshot()['capabilities']['start_model_service'])
+
+    def test_process_identity_ignores_terminal_width(self):
+        from ride.local_process import LocalProcessClient
+        with tempfile.TemporaryDirectory() as directory:
+            client = LocalProcessClient(Path(directory))
+            client.submit_job(submission_id='long-process-identity', entrypoint=shlex.join([sys.executable,'-c','import time;time.sleep(5)']),runtime_env={},entrypoint_resources={})
+            try:
+                with patch.dict(os.environ, {'COLUMNS':'80'}):
+                    self.assertEqual(client.get_job_status('long-process-identity').value, 'RUNNING')
+                    client.stop_job('long-process-identity')
+            finally:
+                client.children['long-process-identity'].wait(timeout=10)
