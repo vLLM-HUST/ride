@@ -106,3 +106,16 @@ class LocalController(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             runtime=Runtime(self.config(Path(directory)))
             self.assertFalse(runtime.snapshot()['capabilities']['start_model_service'])
+
+class ProcessIdentityWidthTests(unittest.TestCase):
+    def test_full_command_is_required_for_long_owned_worker_identity(self):
+        from ride.local_process import _matches
+        from types import SimpleNamespace
+        directory=Path('/tmp')/('owned-controller-'+('x'*120))
+        record={'pid':321,'birth':'fixture-birth','token':'fixture-ownership-token'}
+        full='python -m ride.local_process --worker '+str(directory)+' --token '+record['token']
+        def ps(command,**kwargs):
+            if 'lstart=' in command:return SimpleNamespace(stdout='fixture-birth\n')
+            return SimpleNamespace(stdout=full if '-ww' in command else full[:80])
+        with patch('ride.local_process.os.getpgid',return_value=321),patch('ride.local_process.subprocess.run',side_effect=ps):
+            self.assertTrue(_matches(record,directory))
