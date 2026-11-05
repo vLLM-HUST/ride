@@ -60,13 +60,13 @@ SDK 提供：模型管理客户端、Controller 发现/调用客户端、身份/
 
 旧接口兼容；新安全能力通过 capability 显式协商。业务请求不设 timeout、不自动重试。管理探测和整体资源期限另计，不能混成业务 SLO。
 
-## 7. 真实现状与已知问题
+## 7. Current implementation and known gaps
 
-已有：RIDE 独立包、CLI、entry point、Ray Job 生命周期；旧合集软件 88 项通过；r12真实请求/路由/接管，r19五策略与后端独立Ray部署及源512-token生成/登记。
+The canonical roadmap owns current status. SDK software: 40 tests PASS. Independent Instance package: 9 tests PASS. Independent KV package: 34 tests and seven same-input migration comparisons PASS. Installed-package SDK/KV/Instance HTTP-handler fixtures PASS, including UNKNOWN-copy stop protection. These are software checks with fake execution/model/storage, not real Ray/NPU acceptance.
 
-未完成：完整公共 SDK、独立 Controller 仓库迁移、跨仓兼容验收、真实 KV 主动复制、真实自动扩缩和收益。r19 LMCache Ascend 主动复制 FAIL 原件保留；本轮不通过继续扩大后端种类代替解决接口与验证。
+Real KV active copy failed in r19 and is still unresolved. Real independent-package automatic scaling and performance are NOT_RUN. Existing uncommitted operational changes must be integrated before cloud acceptance.
 
-review 两项必须修：全局 FIFO 在排空时可能阻塞已有任务续轮；模型启动 GET→POST 存在归属竞态。复现为本地软件证据，不指称线上事故。前者归请求仓库，后者由 RIDE 条件启动接口和实例仓库共同修复。
+The r21 FIFO reproduction belongs to the old cooperative simple request implementation, not verified against original ThunderAgent. The start ownership race is covered by RIDE conditional start and Instance software regressions, not yet by real cloud acceptance. Original Request Throttling currently declares static backend topology; dynamic membership must be implemented and tested explicitly before claiming cooperative autoscaling compatibility.
 
 ## 8. 验收顺序
 
