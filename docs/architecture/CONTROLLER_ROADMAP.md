@@ -6,9 +6,9 @@
 
 | 项目 | 本轮责任 | 下一项具体交付 | 当前状态 |
 |---|---|---|---|
-| ride | 公共 SDK、注册与管理、模型生命周期 | 轻量 import、条件启动/停止、操作身份、SDK 测试 | SDK software PASS (40 tests); installed-wheel PASS; cloud/NPU NOT_RUN |
-| request-throttling-controller | 保留既有限流/多轮任务实现 | 修 FIFO/排空阻塞；接公共契约；独立发布 | 已复现缺陷，未修；B1/SWE保持暂停 |
-| instance-controller | 独立扩缩 Controller | 独立包/仓库、entry point、SDK 调用、真实入口测试 | Independent private repository; 9 tests and isolated installed-package fixture PASS; cloud/NPU NOT_RUN |
+| ride | 公共 SDK、注册与管理、模型生命周期 | 轻量 import、条件启动/停止、操作身份、SDK 测试 | SDK software PASS (40 tests); installed-wheel PASS; cloud/NPU NOT_RUN; [PR #2](https://github.com/vLLM-HUST/ride/pull/2) |
+| request-throttling-controller | 保留既有限流/多轮任务实现 | 核已有续轮/排空契约；接公共 SDK；独立发布 | 接入待验；旧合集FIFO缺陷不外推本仓；B1/SWE本轮不启动 |
+| instance-controller | 独立扩缩 Controller | 独立包/仓库、entry point、SDK 调用、真实入口测试 | [Independent private repository](https://github.com/yancanmao/instance-controller); 9 tests and isolated installed-package fixture PASS; cloud/NPU NOT_RUN |
 | kv-controller | 独立 KV Controller | 迁移已定接口与保守状态机，后端能力适配 | 后续；物理复制未修复 |
 | ride-cooperative-controllers | 历史来源与集成证据 | 标记迁移、保持原件；停止在合集新增正式策略 | 88软件通过，整体硬件未验收 |
 | ride-website | 解释架构与真实验收范围 | 消费本设计与证据，区分目标/实现/已测 | 本轮不发布；不写完成收益 |
