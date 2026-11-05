@@ -23,3 +23,16 @@
 不属于 RIDE 用户部署方案，也不证明 NPU 端到端验收。后续复用已有 Ray 的验收应走
 Controller 验收脚本，不能直接沿用环境创建脚本。硬件 workflow 的专用工作区配置也是历史配置，
 不得因文件仍在就自动恢复已删除工作区。
+
+
+## Explicit local Controller execution
+
+The `local` executor reuses the existing RIDE process-ownership implementation;
+source intake is recorded in `evidence/gennova-local-intake.json`. It is selected
+explicitly with deployment=local; Ray remains the default. Local execution accepts
+Controllers only, installs dependencies beforehand, and reserves no Ray/NPU resources.
+The external model keeps its native deployment lifecycle. Use the existing
+`scripts/one-click.sh local-start|local-stop PLAN OUTPUT` entry; runtime_env supports
+env_vars only. Unknown process identity refuses signals and duplicate submission.
+The local operational stop wait is15 seconds, separate from business waiting.
+Cloud local lifecycle and real model evidence must be recorded separately from Ray acceptance.

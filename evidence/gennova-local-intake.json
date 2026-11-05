@@ -1,0 +1,16 @@
+{
+  "source": "existing RIDE working tree, not upstream main",
+  "source_head": "071976ebcaa0fa9ae3553adb512693f1326ce24d",
+  "files": {
+    "src/ride/local_process.py": "fb1f8d7c652664eb2e2f84af82f1336ff64a6e5a65e97ae26c0cbf44779f03da",
+    "scripts/local_controller.py": "56abab7292e5d353853bffaf556ec128fd7cb25b947e47443e243407e313e3f0",
+    "tests/test_local_controller.py": "c920b31a737b4e7fbaa801abe0c2f98d75bcea88bd73068502de088b2cb725fd"
+  },
+  "adaptations": [
+    "reuse local executor alongside existing Ray executor; no local model lifecycle",
+    "extend standard one-click entry to local-start/local-stop",
+    "stop wait15s covers Controller5s shutdown grace",
+    "reap owned child after adopted stop",
+    "readiness polls do not automatically restart a failed Controller"
+  ]
+}
