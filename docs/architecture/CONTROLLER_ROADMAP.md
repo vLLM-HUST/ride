@@ -6,9 +6,9 @@
 
 | 项目 | 责任 | 本轮实际进度 | 下一项 |
 |---|---|---|---|
-| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.2 ae47faf；57项本地回归及Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)尚未合并，软件回执触发组织证据保管review | 管理服务重启接管，保留现有Job与控制循环 |
+| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.2；接管入口1ab48c0；67项本地回归及Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)尚未合并，组织证据review仍开放 | 实机管理服务重启接管，保留现有Job与控制循环 |
 | request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 分支codex/independent-request-controller，1ff83cb；83通过、4可选项跳过；创建PR两次HTTP500未创建；远端未出现此分支CI；r35真实三组两轮和排空协作通过 | 空状态进程重启；非空状态恢复仍不支持 |
-| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.2 ce69cd1；17项本地回归与Linux CI通过；r35真实稳定1→2→1、本进程停止恢复通过 | 只读观测失败后恢复、管理重启接管 |
+| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.3 743f489：30项本地回归与Linux CI通过，只读连接/5xx失败后重读，未知动作不重投；r35实机通过的是0.1.2 ce69cd1 | 0.1.3实机重验扩缩、观测恢复、管理接管 |
 | [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.2 b08db35；39项本地回归与Linux CI通过；r35只读后端、排空协作、本进程停止恢复通过；七场景迁移对照保留 | 现有支持动作的后端单独验真实KV；当前copy=false |
 | ride-cooperative-controllers | 历史来源与集成证据 | 保留原件，不再添加正式策略；r19失败不重标 | 供迁移比对，不维持第二份开发计划 |
 | ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
@@ -41,4 +41,4 @@ r35使用RIDE ae47faf、Instance ce69cd1、KV b08db35、Request 1ff83cb，原版
 
 r33暴露KV模块入口错误，先失败回归后修为0.1.2。r34完成6次生成、两个两轮，但缩容连续停止两个模型再重启；原件保留。Instance0.1.2区分停止中的作业与后续容量，保留最小Ready副本，限制未终止的资源预约；r35增加仅两次启动、原模型保留、三个控制间隔稳定的断言后通过。不将r34失败重标为通过。
 
-下一项是管理服务重启和限流层空状态重启。当前Instance循环遇到一次观测异常就退出；先补只读连接失败后重新观测的回归，动作结果未知和身份冲突仍停止，不自动重投。管理接管沿既有RIDE标准验收入口扩展，先软件再独立实机窗口。KV实际数据动作与性能仍独立开放。
+下一项是管理服务重启和限流层空状态重启。Instance0.1.3已修正一次观测异常就退出：只读连接/5xx失败可重读，动作结果未知和身份冲突仍停止。RIDE新增标准accept-adoption入口，明确新管理Job绑定、停止模型保持停止、重复意图拒绝和有界故障窗口；软件通过，尚待独立实机窗口。KV实际数据动作与性能仍独立开放。
