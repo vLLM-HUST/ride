@@ -82,3 +82,32 @@ class SDK(unittest.TestCase):
         self.assertEqual(client.controllers.describe('kv')['endpoint'],'http://kv.invalid:19082')
 
 if __name__=='__main__':unittest.main()
+
+class ModelStartDeadline(unittest.TestCase):
+    def test_expired_deadline_refuses_before_any_intent_or_job(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ray=Ray();runtime=Runtime({'workspace':'fixture','state_file':str(Path(directory)/'state.json')},ray)
+            with self.assertRaisesRegex(ValueError,'deadline'):
+                runtime.start_instance('model_services','late',dict(SPEC,start_not_after='2020-01-01T00:00:00+00:00'),operation_id='late',expected_job_id=None)
+            self.assertFalse(ray.submitted);self.assertFalse(runtime.state['jobs']);self.assertFalse(runtime.state['start_operations'])
+
+    def test_naive_or_invalid_deadline_is_not_interpreted_as_local_time(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ray=Ray();runtime=Runtime({'workspace':'fixture','state_file':str(Path(directory)/'state.json')},ray)
+            for value in ['2026-11-06T01:00:00','invalid',None,False]:
+                with self.subTest(value=value),self.assertRaises(ValueError):
+                    runtime.start_instance('model_services','invalid',dict(SPEC,start_not_after=value),operation_id='invalid',expected_job_id=None)
+            self.assertFalse(ray.submitted)
+
+    def test_completed_start_replay_is_a_query_even_after_deadline(self):
+        from datetime import datetime,timezone
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as directory:
+            ray=Ray();runtime=Runtime({'workspace':'fixture','state_file':str(Path(directory)/'state.json')},ray)
+            spec=dict(SPEC,start_not_after='2999-01-01T00:00:00Z')
+            first=runtime.start_instance('model_services','a',spec,operation_id='first',expected_job_id=None)
+            with patch('ride.runtime.datetime') as clock:
+                clock.now.return_value=datetime(3000,1,1,tzinfo=timezone.utc)
+                self.assertEqual(runtime.start_instance('model_services','a',spec,operation_id='first',expected_job_id=None),first)
+                with self.assertRaises(ValueError):runtime.start_instance('model_services','b',spec,operation_id='second',expected_job_id=None)
+            self.assertEqual(len(ray.submitted),1)

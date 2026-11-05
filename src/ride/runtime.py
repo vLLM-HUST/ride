@@ -82,6 +82,14 @@ class Runtime:
             spec = copy.deepcopy(old or {'id': identifier})
             spec.update(changes or {})
             spec['id'] = identifier
+            start_deadline = None
+            if 'start_not_after' in spec:
+                value = spec['start_not_after']
+                try:
+                    if not isinstance(value,str):raise ValueError()
+                    start_deadline = datetime.fromisoformat(value.replace('Z','+00:00'))
+                    if start_deadline.utcoffset() is None:raise ValueError()
+                except ValueError:raise ValueError('Timezone-aware model start deadline required')
             prefix = spec.get('job_name_prefix')
             if 'job_name_prefix' in spec and (not isinstance(prefix, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}', prefix)):
                 raise ValueError('Invalid Ray Job name prefix')
@@ -115,6 +123,8 @@ class Runtime:
                     raise ValueError('Dependent model service is not Ready')
                 if spec['backend'] != model['endpoint']:
                     raise ValueError('Controller backend does not match model service')
+            if start_deadline is not None and datetime.now(timezone.utc) >= start_deadline:
+                raise ValueError('Model start deadline expired; no new Job submitted')
             self.state['specs'][kind][identifier] = spec
             job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
             if prefix:
@@ -219,7 +229,7 @@ class Runtime:
         return record
 
     def capabilities(self):
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'start_deadline':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
 
     def snapshot(self):
         with self.lock:
