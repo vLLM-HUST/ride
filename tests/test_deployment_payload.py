@@ -28,6 +28,9 @@ class PayloadTests(unittest.TestCase):
 
     def test_existing_conflict_and_traversal_preserve_content(self):
         with tempfile.TemporaryDirectory() as directory:
+            # Production requires a canonical destination. macOS temp paths
+            # may themselves traverse /var -> /private/var.
+            directory = str(Path(directory).resolve())
             code = module.REMOTE.replace('/workspace/home/', directory + '/')
             destination = directory + '/payload'
             def item(data, path='config.json'):
@@ -43,3 +46,10 @@ class PayloadTests(unittest.TestCase):
             self.assertNotEqual(run([item(b'escape', '../outside')]).returncode, 0)
             self.assertEqual(Path(destination, 'config.json').read_bytes(), b'original')
             self.assertFalse(Path(directory, 'outside').exists())
+            alias = Path(directory) / 'alias'
+            alias.symlink_to(Path(directory), target_is_directory=True)
+            unsafe = subprocess.run([sys.executable, '-c', code],
+                input=json.dumps(dict(destination=str(alias/'payload'),files=[item(b'original')])).encode(),
+                capture_output=True)
+            self.assertNotEqual(unsafe.returncode, 0)
+            self.assertEqual(Path(destination, 'config.json').read_bytes(), b'original')
