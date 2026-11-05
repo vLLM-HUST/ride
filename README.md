@@ -16,7 +16,7 @@ RIDE 提供两部分：供各个 Controller 导入的轻量 `ride.sdk` 库，以
 |---|---|---|
 | [Request Throttling](https://github.com/vLLM-HUST/request-throttling-controller/tree/codex/independent-request-controller) | 请求限流、多轮任务归属、请求排空 | 独立进程托管、状态与日志 |
 | [Instance Controller](https://github.com/yancanmao/instance-controller) | 何时扩缩容、Ready 后激活、请求和 KV 双排空 | 通过 SDK 启停准确的模型 Job |
-| [KV Controller](https://github.com/yancanmao/kv-controller) | KV 能力查询、动作验证和排空保护 | 进程托管、模型身份与发现 |
+| [KV Controller](https://github.com/yancanmao/kv-controller) | KV 能力查询、动作验证和排空保护 | 进程托管、配置身份与日志 |
 
 Controller 只导入公共 `ride.sdk`，不导入彼此的策略实现。导入 SDK 不加载 Ray、Torch 或 vLLM，不启动服务。插件通过 `ride.controllers` 注册，遵守统一配置、身份与健康接口；策略循环由独立包运行。
 
