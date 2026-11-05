@@ -28,6 +28,7 @@ class PayloadTests(unittest.TestCase):
 
     def test_existing_conflict_and_traversal_preserve_content(self):
         with tempfile.TemporaryDirectory() as directory:
+            directory = str(Path(directory).resolve())
             code = module.REMOTE.replace('/workspace/home/', directory + '/')
             destination = directory + '/payload'
             def item(data, path='config.json'):

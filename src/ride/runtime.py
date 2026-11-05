@@ -10,6 +10,8 @@ from datetime import datetime, timezone
 from urllib.request import urlopen
 from .registry import command, controller_adapter
 
+_UNCONDITIONAL = object()
+
 class Runtime:
     def __init__(self, config, client=None):
         self.config = copy.deepcopy(config)
@@ -23,6 +25,7 @@ class Runtime:
         self.state = json.loads(self.path.read_text()) if self.path.exists() else {'run_id': uuid.uuid4().hex, 'jobs': {}, 'operations': []}
         self.state.setdefault('specs', {'controllers': {}, 'model_services': {}})
         self.state.setdefault('submitted_specs', {})
+        self.state.setdefault('start_operations', {})
         for kind in ('controllers', 'model_services'):
             self.state['specs'].setdefault(kind, {})
             for spec in config.get(kind, []):
@@ -43,10 +46,29 @@ class Runtime:
     def key(kind, identifier):
         return identifier if kind == 'controllers' else 'model-service/' + identifier
 
-    def start_instance(self, kind, identifier, changes=None):
+    def start_instance(self, kind, identifier, changes=None, *, operation_id=None, expected_job_id=_UNCONDITIONAL):
         if kind not in self.state['specs'] or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}', identifier):
             raise ValueError('Invalid resource kind or instance name')
+        conditional = expected_job_id is not _UNCONDITIONAL
+        if conditional != (operation_id is not None):
+            raise ValueError('Conditional start requires operation_id and expected_job_id')
+        if conditional:
+            if not isinstance(operation_id,str) or not 0<len(operation_id)<=256:
+                raise ValueError('Bounded operation identity required')
+            if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id):
+                raise ValueError('Prior Job identity required')
+            requested=json.dumps(dict(kind=kind,identifier=identifier,changes=changes,
+                expected_job_id=expected_job_id),sort_keys=True,separators=(',',':'),allow_nan=False)
         with self.lock:
+            key=self.key(kind,identifier)
+            if conditional:
+                previous=self.state['start_operations'].get(operation_id)
+                if previous:
+                    if previous['request']!=requested:raise ValueError('Start operation payload conflict')
+                    if previous['status']!='COMPLETED':raise ValueError('Start outcome unknown; inspect original Job, do not resubmit')
+                    return copy.deepcopy(previous['result'])
+                if self.state['jobs'].get(key)!=expected_job_id:
+                    raise ValueError('Start precondition Job identity changed')
             old = self.state['specs'][kind].get(identifier)
             if old is None and not changes:
                 raise ValueError('Unknown instance; provide type and configuration')
@@ -65,7 +87,11 @@ class Runtime:
                 if self.client.get_job_status(prior).value in ('RUNNING', 'PENDING'):
                     if self.state['submitted_specs'].get(key, spec) != spec:
                         raise ValueError('Running instance configuration conflict')
-                    return {'job_id': prior, 'unchanged': True, 'id': identifier}
+                    result={'job_id': prior, 'unchanged': True, 'id': identifier}
+                    if conditional:
+                        self.state['start_operations'][operation_id]=dict(request=requested,status='COMPLETED',result=result,job_id=prior)
+                        self.save()
+                    return result
             if kind == 'controllers' and spec.get('model_service'):
                 model = self.describe('model_services', spec['model_service'])
                 if not model['ready']:
@@ -76,6 +102,9 @@ class Runtime:
             job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
             self.state['jobs'][key] = job_id
             self.state['submitted_specs'][key] = copy.deepcopy(spec)
+            if conditional:
+                self.state['start_operations'][operation_id]=dict(request=requested,status='UNKNOWN',job_id=job_id,
+                    kind=kind,identifier=identifier)
             self.operation('start-intent', key, job_id)
             kwargs = dict(submission_id=job_id, entrypoint=cmd,
                 runtime_env=spec.get('runtime_env', {}), entrypoint_resources=spec.get('resources', {}))
@@ -87,21 +116,34 @@ class Runtime:
                 self.operation('start', key, 'UNKNOWN_OUTCOME')
                 raise
             self.operation('start', key, 'SUBMITTED')
-            return {'job_id': job_id, 'id': identifier, 'endpoint': spec['endpoint']}
+            result={'job_id': job_id, 'id': identifier, 'endpoint': spec['endpoint']}
+            if conditional:
+                self.state['start_operations'][operation_id].update(status='COMPLETED',result=result)
+                self.save()
+            return result
 
     def start(self, identifier): return self.start_instance('controllers', identifier)
     def start_model_service(self, identifier): return self.start_instance('model_services', identifier)
     def stop_model_service(self, identifier): return self.stop_instance('model_services', identifier)
 
-    def stop(self, identifier):
+    def stop(self, identifier, *, expected_job_id=None):
         with self.lock:
             job_id = self.state['jobs'].get(identifier)
             if not job_id: raise ValueError('No owned job for instance')
+            if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
+                raise ValueError('Stop precondition Job identity changed')
             result = self.client.stop_job(job_id)
             self.operation('stop', identifier, str(result))
             return {'job_id': job_id, 'stop_requested': result}
 
-    def stop_instance(self, kind, identifier): return self.stop(self.key(kind, identifier))
+    def stop_instance(self, kind, identifier, *, expected_job_id=None):
+        return self.stop(self.key(kind, identifier),expected_job_id=expected_job_id)
+
+    def describe_operation(self, identifier):
+        with self.lock:
+            row=self.state['start_operations'].get(identifier)
+            if row is None:raise ValueError('Unknown operation')
+            return {key:copy.deepcopy(value) for key,value in row.items() if key not in ('request','result')}
 
     def logs(self, kind, identifier):
         key = self.key(kind, identifier)
@@ -157,6 +199,10 @@ class Runtime:
                 except Exception as error: record['probe_error'] = type(error).__name__
         return record
 
+    @staticmethod
+    def capabilities():
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'inspect':True,'start_controller':True,'start_model_service':True,'mutate':True}
+
     def snapshot(self):
         with self.lock:
             names = {k: list(v) for k,v in self.state['specs'].items()}
@@ -164,4 +210,4 @@ class Runtime:
         return {'name': self.config.get('name', 'RIDE'), 'workspace': self.config['workspace'],
             'run_id': self.state['run_id'], 'management_pid': os.getpid(), 'build_revision': os.environ.get('RIDE_BUILD_REVISION'), 'observed_at': datetime.now(timezone.utc).isoformat(),
             **{kind: [self.describe(kind, n) for n in ids] for kind,ids in names.items()},
-            'operations': operations, 'capabilities': {'inspect': True, 'start_controller': True, 'start_model_service': True, 'mutate': True}}
+            'operations': operations, 'capabilities': self.capabilities()}

@@ -15,6 +15,7 @@ def handler(config, runtime=None):
             parts=self.parts()
             try:
                 if parts==['healthz']: return self.reply({'status':'ok','service':'ride'})
+                if runtime and parts==['api','v1','capabilities']:return self.reply(runtime.capabilities())
                 if parts==['api','v1','status']: return self.reply(runtime.snapshot() if runtime else {'controllers':[],'model_services':[],'operations':[],'capabilities':{'mutate':False}})
                 if runtime and parts[:2]==['api','v1'] and len(parts)>=3:
                     kind=parts[2].replace('-','_')
@@ -22,6 +23,8 @@ def handler(config, runtime=None):
                         if len(parts)==3: return self.reply(runtime.snapshot()[kind])
                         if len(parts)==4: return self.reply(runtime.describe(kind,parts[3]))
                         if len(parts)==5 and parts[4]=='logs': return self.reply(runtime.logs(kind,parts[3]))
+                if runtime and len(parts)==4 and parts[:3]==['api','v1','operations']:
+                    return self.reply(runtime.describe_operation(parts[3]))
                 if parts in ([''],['index.html']):
                     body=Path(__file__).with_name('index.html').read_bytes();self.send_response(200)
                     self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Content-Length',str(len(body)));self.end_headers();self.wfile.write(body);return
@@ -44,9 +47,16 @@ def handler(config, runtime=None):
                 kind=parts[2].replace('-','_');name=parts[3]
                 if parts[4]=='start':
                     # Old predeclared Controller endpoint stays compatible.
-                    if not changes and kind=='controllers':result=runtime.start(name)
+                    if set(changes)&{'spec','operation_id','expected_job_id'}:
+                        if set(changes)!={'spec','operation_id','expected_job_id'} or not isinstance(changes['spec'],dict):
+                            raise ValueError('Conditional start requires spec, operation_id and expected_job_id')
+                        result=runtime.start_instance(kind,name,changes['spec'],operation_id=changes['operation_id'],expected_job_id=changes['expected_job_id'])
+                    elif not changes and kind=='controllers':result=runtime.start(name)
                     else:result=runtime.start_instance(kind,name,changes or None)
-                else:result=runtime.stop_instance(kind,name)
+                else:
+                    if set(changes)-{'expected_job_id'}:raise ValueError('Unsupported stop condition')
+                    if changes:result=runtime.stop_instance(kind,name,expected_job_id=changes['expected_job_id'])
+                    else:result=runtime.stop_instance(kind,name)
                 self.reply(result,202)
             except (ValueError,KeyError) as e:self.reply({'error':str(e)},409)
             except Exception as e:self.reply({'error':type(e).__name__},503)
