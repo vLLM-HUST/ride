@@ -17,3 +17,5 @@ RIDE 是控制面，Controller 是独立进程，Ray 是执行底座。
 
 - [统一技术设计](architecture/INDEPENDENT_CONTROLLERS.md)
 - [跨项目统一路线图](architecture/CONTROLLER_ROADMAP.md)
+
+项目目标与阶段验收：[RIDE 项目中长期规划](PROJECT_PLAN.md)；任务执行状态统一在[跨仓库路线图](architecture/CONTROLLER_ROADMAP.md)。
