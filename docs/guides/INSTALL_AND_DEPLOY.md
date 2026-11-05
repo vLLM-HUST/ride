@@ -54,3 +54,15 @@ Demo 单张 NPU 真实 vLLM 请求、并发限制、停止和恢复的结果：
 [验收摘要](https://github.com/vLLM-HUST/ride-controller-demo/blob/main/results/npu-20261011/summary.json)。
 上述两个包装脚本尚未独立云端执行；底层 ride start / Controller / model-service 命令已经云端验收。
 脚本不会建立新的集群。CPU 检查不能代替真实 NPU 端到端验收。
+
+## 管理服务重启接管的独立验收
+
+```sh
+scripts/one-click.sh accept-adoption /absolute/frozen-plan.json /absolute/new-evidence-directory
+```
+
+计划保留原部署的`address`、`ray_address`、`management_job_id`、`runtime_env`和平台身份，`deployment_output`指向含`management-submission.json`的原部署证据目录。可显式冻结`adoption_job_id`，值必须是原管理Job ID加`-adopt`。`timeout`是运维就绪检查期限，不是业务请求timeout。
+
+入口先核平台与Ray关联、原管理Job为RUNNING且命令匹配、现存运行实例Ready。已存在停止或接管意图则拒绝重投。随后仅替换管理Job，读取原状态目录，要求run_id相同、管理进程改变、所有Controller和模型Job ID不变。原本STOPPED的模型保持STOPPED；运行中的实例等待恢复Ready。执行绑定改为新管理Job，冻结输入文件不改写。
+
+这项PASS只说明管理接管，不说明模型提交、限流层运行态恢复或性能。控制器必须自行处理只读观测暂时失败；不能忽略其错误来取得通过。限流层仅允许已释放全部任务、无在途和未知请求的空状态重启；非空Router恢复仍不支持。

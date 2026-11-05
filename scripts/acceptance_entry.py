@@ -12,7 +12,7 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('operation', choices=['deploy', 'accept', 'accept-policy'])
+    parser.add_argument('operation', choices=['deploy', 'accept', 'accept-policy', 'accept-adoption'])
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
@@ -70,7 +70,12 @@ def main():
             from deployment_payload import prepare_payload
             action('payload', 'Explicit Pod identity, source hashes and remote readback match; no overwrite',
                    lambda: prepare_payload(plan['payload']))
-        if args.operation == 'accept-policy':
+        if args.operation == 'accept-adoption':
+            from acceptance_scenarios import adoption
+            action('management_adoption', 'Same instance Jobs, new management process, recovered live readiness', lambda: adoption(plan, client, wait))
+            ledger['status'] = 'PASS'
+            ledger['scope'] = 'Management adoption only; no model submission or performance acceptance'
+        elif args.operation == 'accept-policy':
             from acceptance_policy import pressure, comparison
             prerequisite = json.loads(Path(plan['prerequisite']).read_text())
             assert prerequisite['status'] == 'INCOMPLETE' and all(x['status'] == 'PASS' for x in prerequisite['actions']), 'Functional prerequisite failed'

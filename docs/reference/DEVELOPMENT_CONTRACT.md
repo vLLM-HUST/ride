@@ -24,7 +24,7 @@ Controller type 与 instance 区分；停止 Controller 不得隐式停止外部
 
 ## 2. 环境与部署约束
 
-本用户当前云上验收使用 9450、Coder **admin**、已有标准 RayCluster 模板。
+平台、账号和具体权限以当前用户指令与冻结计划为准，不从共享默认登录态推断。旧9450条目是历史执行环境，不是后续项目的永久限制；各平台登录态保持独立。仍使用已有标准 RayCluster 模板。
 先查已有合适集群；没有时按明确授权，通过该模板创建一个共享工作区和 RayCluster。
 “新开 RayCluster”不得解释为绕过 Coder 直接创建 Kubernetes 对象。
 不为 Demo、Controller 或单次实验新建专用模板。所有本轮组件使用同一个集群。
