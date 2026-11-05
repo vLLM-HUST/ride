@@ -1,32 +1,36 @@
 # RIDE 与 Controller 项目统一路线图
 
-唯一技术设计：[INDEPENDENT_CONTROLLERS.md](INDEPENDENT_CONTROLLERS.md)。更新时间：2026-11-05。状态和来源按实际回执更新，不把计划/创建空仓/软件通过当全部完成。
+项目目标、范围与阶段验收：[中长期规划](../PROJECT_PLAN.md)。系统边界：[统一技术设计](INDEPENDENT_CONTROLLERS.md)。本表是唯一跨仓库任务状态，更新于2026-11-06；软件、云端托管、真模型和收益分别核销。
 
 ## 项目对齐表
 
-| 项目 | 本轮责任 | 下一项具体交付 | 当前状态 |
+| 项目 | 责任 | 本轮实际进度 | 下一项 |
 |---|---|---|---|
-| ride | 公共 SDK、注册与管理、模型生命周期 | 轻量 import、条件启动/停止、操作身份、SDK 测试 | SDK software PASS (40 tests); installed-wheel PASS; cloud/NPU NOT_RUN; [PR #2](https://github.com/vLLM-HUST/ride/pull/2) |
-| request-throttling-controller | 保留既有限流/多轮任务实现 | 核已有续轮/排空契约；接公共 SDK；独立发布 | 接入待验；旧合集FIFO缺陷不外推本仓；B1/SWE本轮不启动 |
-| instance-controller | 独立扩缩 Controller | 独立包/仓库、entry point、SDK 调用、真实入口测试 | [Independent private repository](https://github.com/yancanmao/instance-controller); 9 tests and isolated installed-package fixture PASS; cloud/NPU NOT_RUN |
-| [kv-controller](https://github.com/yancanmao/kv-controller) | 独立 KV Controller | 迁移已定接口与保守状态机，后端能力适配 | 独立仓库已推送；34项软件测试及跨包安装fixture通过；物理复制未修复 |
-| ride-cooperative-controllers | 历史来源与集成证据 | 标记迁移、保持原件；停止在合集新增正式策略 | 88软件通过，整体硬件未验收 |
-| ride-website | 解释架构与真实验收范围 | 消费本设计与证据，区分目标/实现/已测 | 本轮不发布；不写完成收益 |
+| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.1；53项本地回归通过；Linux软件CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)尚未合并，软件回执触发组织证据保管review | 标准云端安装与管理服务部署 |
+| request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 从main单独建分支codex/independent-request-controller；新增托管入口；83通过、4可选项跳过；四包隔离安装软件协作通过；代码1ff83cb已推送，创建PR两次HTTP500，未创建；远端CI未验 | 真模型多轮、工具等待、排空与停止隔离 |
+| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 独立仓库；0.1.1；11项本地测试通过。纯能力接口避免状态聚合回调本控制循环；旧0.1.0 Linux CI通过，新提交CI按回执核对 | 真模型Ready后激活及自动扩缩 |
+| [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 独立仓库；0.1.1；38项本地测试通过，七场景迁移对照一致。已知Ascend主动复制仍不支持；原生vLLM只读适配不声称缓存查询/复制能力 | 先用真实引擎验只读能力与扩缩协作；支持复制的后端另验 |
+| ride-cooperative-controllers | 历史来源与集成证据 | 保留原件，不再添加正式策略；r19失败不重标 | 供迁移比对，不维持第二份开发计划 |
+| ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
 
-## 按顺序推进的里程碑
+## 里程碑与验收
 
-- [x] M0：用户确认独立仓库与公共RIDE范式；技术设计、架构图及本表记录。
-- [x] M1 (software)：RIDE SDK与安全模型生命周期。import无副作用/无Ray重依赖；条件启动原子核身份；重复/未知操作不重投；旧API兼容。
-- [x] M2 (software)：实例Controller独立仓库。安装后由RIDE发现；启动/停止隔离；仅管理本次拥有的模型；工具等待和双排空回归。
-- [x] M3 (software)：KV Controller独立仓库。独立安装且不import其他策略包；能力不支持/未知/完成语义保持；历史原件逐SHA。
-- [ ] M4：请求Controller排空回归与公共契约接入。新任务不可阻断已有任务续轮；保留原ThunderAgent来源和与简单基线的区别。
-- [ ] M5：跨仓标准云端CPU验证；再在独立冻结硬件窗口完成真实模型、缓存动作与自动1→2→1。缺项NOT_RUN。
-- [ ] M6：同条件完整批次、原生强基线、至少3组交替重复；收益/负结果/代价分别报告；最后按明确授权更新网站。
+- [x] M0：独立仓库、公共RIDE开发范式、设计与架构图、中长期规划落盘。
+- [x] M1（软件）：轻量SDK、原子条件启动/停止、操作身份与未知不重投；必要既有部署修复合并，原工作树未覆盖。
+- [x] M2（软件）：独立实例Controller安装/插件发现、Ready后激活、准确Job停止、工具等待及双排空回归。
+- [x] M3（软件）：独立KV包、后端接口、不支持动作前拒绝、UNKNOWN重启保护、源与目标覆盖验证及来源逐SHA。
+- [x] M4（软件）：既有请求仓库的独立托管入口接公共SDK；事前声明模型池激活/排空/移除；旧任务续轮不被新任务等待阻塞；未知结果不猜排空；固定原版调度源逐SHA。新入口采用保守全局排空，原入口不替换；不宣称性能等价或原版运行态恢复。
+- [ ] M5.1：固定版本的跨仓标准云端安装、真实Ray Jobs托管、身份、日志、启停/隔离与管理接管。
+- [ ] M5.2：真实模型多轮输出、自动1→2→1、工具等待和排空；原生vLLM只读KV明确拒绝不支持动作。该项通过也不核销实际KV复制。
+- [ ] M5.3：在已存在且明确支持的后端上验证真实KV动作/目标续轮/源保留。r19主动复制失败仍开放，不以扩大后端种类代替解决。
+- [ ] M6：同条件完整批次、原生强基线、至少三组交替重复和留出；收益、负结果与开销分别报告，最后按明确授权发布。
 
-## 已知失败及恢复边界
+## 来源、失败与边界
 
-r19缓存主动复制失败、r21两项review缺陷保留；未修项不能被迁仓抹掉。Ray/平台身份门禁、无业务timeout、shuhao资源排除及已授权清理边界继续生效。旧截止不延长，下一窗口重新冻结；软件开发不需要等待硬件。发现新问题先保留最小复现，再修实现，不为过门禁修改预期。
+旧合集8224ba6保留迁移来源。r21全局FIFO缺陷属于旧合集的简单请求实现，不能外推原ThunderAgent。本次托管入口额外控制可用性，调度核心使用固定7ddc861原文件；可用性门控、全局排空、无限业务等待及保守故障处理属于明确适配。
 
-软件核销补充：M1/M2勾选只指公共SDK和独立包的软件验收，真实Ray/NPU/收益仍由M5/M6核销。源码与完整命令见SDK_R22回执及实例仓库evidence。r21的FIFO缺陷在旧合集简单请求实现中，不外推原ThunderAgent；只有迁移该实现时必须携带修复，已有独立请求实现做对应契约回归。
+本地研究快照上的原型475f60d及1661通过/5跳过保留；不把整个未发布研究历史塞进main。交付分支从9a8501e起，单独验证83通过/4跳过。缺少的Extension Manager和Ray可选项不算通过。
 
-M3 software receipt: [KV software-r23](https://github.com/yancanmao/kv-controller/blob/main/evidence/software-r23.json), commit6041ee6. Seven same-input core comparisons match; installed SDK/KV/Instance fixture passes normal scale-down and UNKNOWN-copy stop protection. Execution, model and storage are fixtures; cloud/NPU/performance NOT_RUN.
+RIDE Linux首轮3个进程身份检查失败，完整命令读取后剩1个退出竞态；最终53项软件CI通过。两次失败与修改分别保留，不以Mac通过替代Linux。KV/实例早期CI缺构建依赖的失败保留。
+
+旧r19物理进程终态Unknown不由本轮新的实时卡位检查回填。新资源按实际对象、全局物理唯一性和独立绝对截止重新冻结；不复活旧run。B1/SWE本轮不启动，其他研究聊天保持独立；不动shuhao或他人活跃资源。固定RayCluster中释放模型预约不等于释放平台申请卡时。
