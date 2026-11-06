@@ -42,6 +42,7 @@ class LocalController(unittest.TestCase):
                     first = runtime.start_instance('controllers', 'mine', self.spec())
                     again = runtime.start_instance('controllers', 'mine')
                 self.assertEqual(first['job_id'], again['job_id'])
+                runtime.close()
                 restored = Runtime(config)
                 for _ in range(100):
                     if 'controller-fixture-started' in restored.logs('controllers','mine')['logs']:
@@ -54,8 +55,10 @@ class LocalController(unittest.TestCase):
                 self.assertEqual(restored.client.get_job_status(first['job_id']).value, 'STOPPED')
                 self.assertFalse(restored.health('http://127.0.0.1:1'))
             finally:
-                if runtime.state['jobs'].get('mine'):
-                    runtime.stop('mine')
+                owner = locals().get('restored', runtime)
+                if owner.state['jobs'].get('mine') and not owner._closed:
+                    owner.stop('mine')
+                owner.close()
 
     def test_pid_identity_mismatch_refuses_signal_and_duplicate_submit(self):
         from ride.local_process import LocalProcessClient

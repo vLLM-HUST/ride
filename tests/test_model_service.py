@@ -14,7 +14,7 @@ class ModelServiceTests(unittest.TestCase):
             runtime.start_model_service('same')
             self.assertEqual(len(client.submitted),2)
             self.assertIn("'/models/model name'",client.submitted[1]['entrypoint'])
-            restored=Runtime(cfg,client); restored.stop('same')
+            runtime.close();restored=Runtime(cfg,client); restored.stop('same')
             self.assertEqual(client.stopped,[controller['job_id']])
             restored.stop_model_service('same')
             self.assertEqual(client.stopped[-1],model['job_id'])

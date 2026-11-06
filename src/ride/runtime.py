@@ -5,6 +5,9 @@ import json
 import re
 import threading
 import uuid
+import fcntl
+import tempfile
+import weakref
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
@@ -16,8 +19,23 @@ class Runtime:
     def __init__(self, config, client=None):
         self.config = copy.deepcopy(config)
         self.lock = threading.RLock()
-        self.path = Path(config['state_file'])
+        self.path = Path(config['state_file']).resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._closed = False
+        state_lock = self.path.with_name(self.path.name + '.lock').open('a')
+        try:
+            fcntl.flock(state_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            state_lock.close()
+            raise RuntimeError('Management state already has a writer; state file locked') from error
+        self._release_state_lock = weakref.finalize(self, state_lock.close)
+        try:
+            self._initialize(config, client)
+        except BaseException:
+            self.close()
+            raise
+
+    def _initialize(self, config, client):
         self.executor = config.get('deployment', 'ray')
         if self.executor not in ('ray', 'local'):
             raise ValueError('Unsupported process executor')
@@ -40,10 +58,32 @@ class Runtime:
                 self.state['specs'][kind].setdefault(spec['id'], copy.deepcopy(spec))
         self.save()
 
+    def close(self):
+        """Release management ownership only; running Jobs remain untouched."""
+        with self.lock:
+            self._closed = True
+            self._release_state_lock()
+
+    def _ensure_open(self):
+        if self._closed:
+            raise RuntimeError('Management state writer is closed')
+
     def save(self):
-        temporary = self.path.with_suffix('.tmp')
-        temporary.write_text(json.dumps(self.state, indent=2))
-        temporary.replace(self.path)
+        self._ensure_open()
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', dir=self.path.parent,
+                    prefix=self.path.name + '.', delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(self.state, stream, indent=2)
+                stream.flush()
+                os.fsync(stream.fileno())
+            temporary.replace(self.path)
+            descriptor = os.open(self.path.parent, os.O_RDONLY)
+            try:os.fsync(descriptor)
+            finally:os.close(descriptor)
+        finally:
+            if temporary is not None:temporary.unlink(missing_ok=True)
 
     def operation(self, action, target, result):
         self.state['operations'].append({'at': datetime.now(timezone.utc).isoformat(), 'action': action, 'target': target, 'result': result})
@@ -67,6 +107,7 @@ class Runtime:
             requested=json.dumps(dict(kind=kind,identifier=identifier,changes=changes,
                 expected_job_id=expected_job_id),sort_keys=True,separators=(',',':'),allow_nan=False)
         with self.lock:
+            self._ensure_open()
             key=self.key(kind,identifier)
             if conditional:
                 previous=self.state['start_operations'].get(operation_id)
@@ -155,17 +196,18 @@ class Runtime:
     def start_model_service(self, identifier): return self.start_instance('model_services', identifier)
     def stop_model_service(self, identifier): return self.stop_instance('model_services', identifier)
 
-    def stop(self, identifier, *, expected_job_id=None):
+    def stop(self, identifier, *, expected_job_id=_UNCONDITIONAL):
         with self.lock:
+            self._ensure_open()
             job_id = self.state['jobs'].get(identifier)
             if not job_id: raise ValueError('No owned job for instance')
-            if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
+            if expected_job_id is not _UNCONDITIONAL and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
                 raise ValueError('Stop precondition Job identity changed')
             result = self.client.stop_job(job_id)
             self.operation('stop', identifier, str(result))
             return {'job_id': job_id, 'stop_requested': result}
 
-    def stop_instance(self, kind, identifier, *, expected_job_id=None):
+    def stop_instance(self, kind, identifier, *, expected_job_id=_UNCONDITIONAL):
         return self.stop(self.key(kind, identifier),expected_job_id=expected_job_id)
 
     def describe_operation(self, identifier):
@@ -229,7 +271,7 @@ class Runtime:
         return record
 
     def capabilities(self):
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'start_deadline':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'single_writer':True,'start_deadline':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
 
     def snapshot(self):
         with self.lock:

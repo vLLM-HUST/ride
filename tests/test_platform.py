@@ -34,7 +34,7 @@ class PlatformTests(unittest.TestCase):
                 self.assertIn('log for',cli('logs','model-service','model-main'))
                 cli('stop','controller','throttle-main')
                 self.assertEqual(client.stopped,[client.submitted[1]['submission_id']])
-                restored=Runtime(config,client)
+                runtime.close();restored=Runtime(config,client)
                 self.assertEqual(restored.state['specs']['model_services']['model-main']['model'],'/models/m')
                 with self.assertRaises(SystemExit):cli('start','controller','throttle-main','--backend','http://different:8000')
                 self.assertEqual(len(client.submitted),2)
@@ -47,7 +47,7 @@ class PlatformTests(unittest.TestCase):
             config={'state_file':str(Path(directory)/'state.json'),'workspace':'test','controllers':[]}
             client=Uncertain();runtime=Runtime(config,client)
             with self.assertRaises(TimeoutError):runtime.start_instance('model_services','m',{'type':'vllm','model':'/models/m','endpoint':'http://model:8000'})
-            restored=Runtime(config,client);result=restored.start_model_service('m')
+            runtime.close();restored=Runtime(config,client);result=restored.start_model_service('m')
             self.assertTrue(result['unchanged']);self.assertEqual(len(client.submitted),1)
 
     def test_not_ready_dependency_blocks_controller(self):
