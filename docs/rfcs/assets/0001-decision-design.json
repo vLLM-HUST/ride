@@ -69,7 +69,7 @@
     {
       "id": "prediction",
       "label": "启动前瞻分支 → 2",
-      "description": "ceil(预测到达量 / C_sustained)",
+      "description": "ceil(预测到达率 / C_sustained)",
       "position": {
         "x": 800,
         "y": 145

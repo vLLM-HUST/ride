@@ -56,7 +56,7 @@
     <title>启动前瞻分支 → 2</title>
     <rect x="800" y="145" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
     <text x="950.0" y="188.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">启动前瞻分支 → 2</text>
-    <text x="950.0" y="208.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">ceil(预测到达量 / C_sustained)</text>
+    <text x="950.0" y="208.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">ceil(预测到达率 / C_sustained)</text>
   </g>
   <g id="node-merge" class="semantic-cell semantic-node" data-semantic-id="merge">
     <title>目标 = clamp(max(3, 2, 2, 下限)) = 3</title>
