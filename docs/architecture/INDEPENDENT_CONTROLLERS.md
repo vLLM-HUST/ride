@@ -85,4 +85,24 @@ B1/SWE 线保持用户要求的暂停；其他研究线和共享平台工作不�
 
 升级前先保全旧配置与状态。不得热替换运行中的旧组合；确认各Controller终态后使用匹配版本与新冻结配置。旧版没有完整Job绑定的排空状态不猜测恢复；无法核清时保留旧状态并另行资格化，不通过清空数据库消除UNKNOWN。回退只停止新Controller，保留模型及全部状态/日志；不能让旧版本直接接管新增状态语义。
 
-以上修复是一条有界生命周期协议，尚未完成统一对象schema、通用状态版本/CAS、跨服务一致快照、动作补偿和显式未知结果核销。后续先围绕有状态缩容补齐这些能力，不据能力标志宣称全套控制面已完成。
+以上0.3.3组合是一条有界生命周期协议。当时尚无统一对象schema和状态版本/CAS；0.3.4的新增契约见第10节。跨服务一致快照、动作补偿和真正UNKNOWN结果的显式核销仍开放，不据能力标志宣称全套控制面已完成。
+
+## 10. 对象观察和本地状态动作契约
+
+RIDE0.3.4、Instance0.1.6、KV0.1.4、Request0.1.2增加首条实际使用的版本化调用链。通用schema可以描述Service、InstancePool、Instance、ResourceBinding、RuntimeState、Program、KVState；本阶段实际发布的对象视图仅为Request/KV各自负责的Instance成员状态，不称其他控制域已实现。
+
+对象观察`ride.object/v1`包含`object={kind,name,uid}`、`owner_id`、`owner_uid`、`resource_version`、`observed_at`、`state`和`observations`。Instance的uid为当前绑定的Job，未绑定时为null；name只定位预声明的逻辑副本。Request和KV是两个不同所有者的视图，用name/Job关联，不能比较它们的resource_version。owner_uid标识接收方持久数据库世代，Instance首次绑定后不自动接受其改变；它不是共享token的授权身份。resource_version是接收方持久数据库epoch及该对象计数组成的不透明值；进程重启保持，重建数据库改变。observed_at是采样墙钟，不是分布式时钟证明。
+
+`state`中的成员phase/job_id由对象版本覆盖。`observations`中的drained、pending/inflight等为本次采样，独立变化；接收方执行remove时必须重新检查，不把观察字段误当冻结状态。旧的成员变更入口也推进同一对象版本；普通业务记账和其他对象变化不使本对象的成员版本无效。
+
+- GET `/control/replicas/{name}`：读取该接收方负责的Instance状态与当前排空观察。
+- POST `/control/action`：提交`ride.action/v1`，包含唯一operation_id、actor_id、预期owner_id/owner_uid、target对象、expected_resource_version、action和parameters。
+- GET `/control/actions/{operation_id}`：查询已提交的原操作回执；不存在返回404，不推断操作可重投。
+
+服务端只接受activate/drain/remove三种本地成员状态转换，不在SQLite事务里调用Ray、引擎或搬运器。先查相同操作ID的已提交记录：请求逐字规范化相同则返回原回执，内容不同则拒绝。新操作在同一事务核对owner_id/owner_uid、对象UID和版本、执行本地转换、更新版本并记录`ride.action-result/v1`。过期或错误前置条件不产生状态变化和成功回执。回执带请求SHA、原target和变化后的对象/版本；SDK验证身份与请求SHA。actor_id用于追踪，不等于基于身份的访问授权；现有peer token和可信网络边界不因此升级。
+
+Instance将每个发出的状态动作及完整envelope先持久化，再进行一次POST。回复丢失后只查询原回执，核对请求SHA后继续；404/查不到不能当作未执行，保持UNKNOWN且不重投。版本冲突停止该动作，不自动换版本重试。首次drain回执只证明本地动作完成；后续用GET重新观察排空进展，不反复发drain，也不把缓存的drained=false当永恒状态。真正UNKNOWN结果的人工/外部证据核销仍需后续接口。
+
+共享SDK提供make_action、validate_snapshot、verify_action_result、StateClient及Journal的observe_object/apply_action/read_action。`ride.sdk.testing.StatePeerFixture`仅供CPU软件验收，复用真实对象事务但执行为fixture，不能用于生产或充当模型性能证据。
+
+这不是跨服务原子事务、一致快照或所有策略的冲突仲裁。RIDE模型启动/停止仍使用既有精确Job条件及独立效果账本；KV字节传输仍使用既有后端接口。本轮旧/新能力必须匹配，Instance缺少versioned_state_actions时拒绝自动执行，不热混旧组件。实际Coder资格和NPU验证另记。

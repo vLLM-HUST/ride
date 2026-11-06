@@ -65,3 +65,19 @@ class RideClient(PeerClient):
         if capabilities.get('protocol_version')!=PROTOCOL_VERSION:raise ValueError('Incompatible RIDE protocol version')
         if any(capabilities.get(name) is not True for name in names):raise ValueError('RIDE capability missing: '+', '.join(names))
     def operation(self,operation_id):return self.get('/api/v1/operations/'+quote(operation_id,safe=''))
+
+class StateClient:
+    """Local replica-state actions; external model/transfer effects use their own APIs."""
+    def __init__(self,peer):self.peer=peer
+    def observe_instance(self,name):
+        from .objects import validate_snapshot
+        result=validate_snapshot(self.peer.get('/control/replicas/'+quote(name,safe='')))
+        if result['object']['kind']!='Instance' or result['object']['name']!=name:
+            raise ValueError('Observed instance identity conflict')
+        return result
+    def apply(self,request):
+        from .objects import validate_action,verify_action_result
+        validate_action(request)
+        return verify_action_result(request,self.peer.post('/control/action',request))
+    def result(self,operation_id):
+        return self.peer.get('/control/actions/'+quote(operation_id,safe=''))

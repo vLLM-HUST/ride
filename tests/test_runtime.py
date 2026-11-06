@@ -20,3 +20,10 @@ class Tests(unittest.TestCase):
             self.assertEqual(c.stopped,[a["job_id"]])
             with self.assertRaises(ValueError):restored.stop("someone-else")
 if __name__=="__main__":unittest.main()
+
+class JobNames(unittest.TestCase):
+    def test_new_job_names_identify_the_workspace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            r=Runtime({'workspace':'myc-gennova','state_file':str(Path(directory)/'state.json'),
+                'controllers':[{'id':'c','type':'request-throttling','backend':'http://127.0.0.1:8','endpoint':'http://127.0.0.1:9'}]},Client())
+            self.assertIn('myc-gennova',r.start('c')['job_id'])

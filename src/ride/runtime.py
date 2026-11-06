@@ -11,7 +11,7 @@ import weakref
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
-from .registry import command, controller_adapter
+from .registry import command, controller_adapter, model_service_adapter
 
 _UNCONDITIONAL = object()
 
@@ -167,7 +167,8 @@ class Runtime:
             if start_deadline is not None and datetime.now(timezone.utc) >= start_deadline:
                 raise ValueError('Model start deadline expired; no new Job submitted')
             self.state['specs'][kind][identifier] = spec
-            job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
+            workspace = re.sub(r'[^a-zA-Z0-9_.-]', '-', str(self.config.get('workspace','workspace')))[:40]
+            job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + workspace + '-' + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
             if prefix:
                 job_id = prefix + '-' + uuid.uuid4().hex[:12]
             self.state['jobs'][key] = job_id
@@ -244,7 +245,17 @@ class Runtime:
         if kind == 'model_services':
             record['model'] = spec['model']
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
-            record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
+            adapter=model_service_adapter(record['type'])
+            if adapter is not None:
+                if record['job_status']=='RUNNING':
+                    try:
+                        observed=adapter.probe(spec)
+                        record['ready']=observed.get('model_ready') is True
+                        for field in ('health','identity','status'):
+                            if field in observed:record[field]=observed[field]
+                    except Exception as error:record['probe_error']=type(error).__name__
+            else:
+                record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
             if spec.get('backend') is not None:
                 record['backend'] = spec['backend']
@@ -271,7 +282,7 @@ class Runtime:
         return record
 
     def capabilities(self):
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'single_writer':True,'start_deadline':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'single_writer':True,'start_deadline':True,'model_service_plugins':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
 
     def snapshot(self):
         with self.lock:
