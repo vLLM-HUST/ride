@@ -22,7 +22,7 @@ Controller 只导入公共 `ride.sdk`，不导入彼此的策略实现。导入 
 
 当前已完成独立包的软件检查，以及真实模型的多轮请求、扩缩容、排空和有界恢复验证；完整收益验收仍在进行。当前 KV 后端只读，实际复制不支持；限流层仅支持空状态重启，不承诺非空状态恢复或高可用。详细边界、实际证据和下一项以[统一路线图](docs/architecture/CONTROLLER_ROADMAP.md)为准。
 
-[公共 SDK](docs/guides/SDK.md) · [开发契约与接入方式](docs/guides/CONTROLLER_DEVELOPMENT.md) · [系统设计与可编辑架构图](docs/architecture/INDEPENDENT_CONTROLLERS.md) · [中长期规划](docs/PROJECT_PLAN.md) · [效果验证契约](docs/architecture/CONTROLLER_EVALUATION.md)
+[RFC索引与评审规范](docs/rfcs/README.md) · [公共 SDK](docs/guides/SDK.md) · [开发契约与接入方式](docs/guides/CONTROLLER_DEVELOPMENT.md) · [系统设计与可编辑架构图](docs/architecture/INDEPENDENT_CONTROLLERS.md) · [中长期规划](docs/PROJECT_PLAN.md) · [效果验证契约](docs/architecture/CONTROLLER_EVALUATION.md)
 
 ## 项目成果与验收总索引
 

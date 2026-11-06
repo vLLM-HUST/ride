@@ -44,7 +44,7 @@
 
 先测单副本不同输入/输出长度的容量、真实启动/Ready时间及控制开销，再选择一个成熟策略。来源候选为[Dynamo Planner](https://docs.nvidia.com/dynamo/dev/reference/components/planner-configuration)与[llm-d扩缩指南](https://github.com/llm-d/llm-d/blob/main/guides/workload-autoscaling/README.md)的负载/饱和度信号。实施前固定代码版本与实际算法，不把开发文档当稳定实现，不搬整套平台。
 
-当前具体建议见[Instance选型方案](architecture/CONTROLLER_EVALUATION.md#instance选型方案工作量反馈与启动前瞻2026-11-06调研)：成熟路径作对照，工作量反应式及冷启动前瞻分开验；实验性候选的成熟度不因本计划升级。
+当前具体建议见[RFC-0001设计草案](rfcs/0001-instance-autoscaling.md)：成熟路径作对照，工作量反应式及冷启动前瞻分开验；实验性候选的成熟度不因本计划升级。
 
 必需对照：固定1副本、固定最大副本、当前按请求数量且有合理延迟的策略、选定的成熟工作量感知策略。自行改进时上游策略独立保留为基线。只改变扩缩决策，其余限流/缓存/路由保持共同配置。
 
