@@ -3,7 +3,7 @@
 状态：2026-11-06，固定提交的双 devbox、双 TP1 功能链已完成 9 次真实生成，
 含请求等待/恢复、管理接管和停止隔离。冷启动使用 30ec6a4，管理重启入口使用
 3a4adde；随后合入上游 0.3.3 安全修复的开发版通过 103 项软件检查，尚未重新
-执行 NPU 验收。Linux 软件 CI 的 103 项、CLI/构建及轻量 SDK 检查也通过；验证清单已按组织规范迁存 benchmark，原件哈希保留。短证据见[验证清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/5ce1289a705aa25269f350c29151556fa0864d53/reports/ride-control-plane-20261106/source/evidence/machine-deployment-20261106/summary.json)。
+执行 NPU 验收。Linux 软件 CI 的 103 项、CLI/构建及轻量 SDK 检查也通过；验证清单已按组织规范迁存 benchmark，原件哈希保留。短证据见[验证清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/evidence/machine-deployment-20261106/summary.json)。
 当前合并候选包含 0.3.4 公共对象和外部模型插件，118 项本地软件测试及 CLI/构建检查通过；该组合未重新执行 NPU 验收。
 入口自身的 PASS 只表示部署就绪检查通过，不证明真实推理、Controller 动作或性能收益。
 本功能在 RIDE 实现；gennova-d 后续消费，不复制部署器。
