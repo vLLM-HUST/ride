@@ -74,6 +74,8 @@ def validate_plan(plan):
             names.add(name)
             if not spec.get('type') or spec.get('autostart'):
                 raise ValueError('Explicit type required; deployment controls startup order')
+            if 'job_name_prefix' in spec and (not isinstance(spec['job_name_prefix'], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,79}', spec['job_name_prefix'])):
+                raise ValueError('Invalid explicit Ray Job name prefix')
             RideClient(spec['endpoint'])
             validate_resources(spec)
             if spec['endpoint'] in endpoints:
@@ -252,7 +254,8 @@ class Deployment:
                 for spec in self.plan.get(kind, []):
                     operation = 'start-' + kind + '-' + spec['id']
                     started = self.journal.execute(operation, spec, lambda api=api, spec=spec, operation=operation:
-                        api.start(spec['id'], spec, operation_id=self.fingerprint + ':' + operation,
+                        api.start(spec['id'], dict(spec, job_name_prefix=spec.get('job_name_prefix', spec['id'])),
+                                  operation_id=self.fingerprint + ':' + operation,
                                   expected_job_id=None))
                     if not isinstance(started, dict) or not started.get('job_id'):
                         raise ValueError('Service submission identity missing')
@@ -264,7 +267,11 @@ class Deployment:
             self.activate_bindings(client)
             result = dict(status='PASS', scope='deployment readiness only',
                           model_request='NOT_RUN', controller_action='NOT_RUN', performance='NOT_RUN',
-                          endpoint=self.plan['management']['endpoint'], deployment=self.fingerprint)
+                          endpoint=self.plan['management']['endpoint'], deployment=self.fingerprint,
+                          model_services=[{'id': item['id'], 'endpoint': item['endpoint']}
+                                          for item in self.plan['model_services']],
+                          controllers=[{'id': item['id'], 'endpoint': item['endpoint']}
+                                       for item in self.plan.get('controllers', [])])
             (self.root / 'readiness.json').write_text(json.dumps(result, indent=2) + '\n')
             return result
 
@@ -303,8 +310,11 @@ class Deployment:
             raise RuntimeError('Management Job terminated; inspect logs and recover explicitly')
 
     def status(self):
+        observed = self.management().status()
+        if not self.verify_management(observed):
+            raise ValueError('Management identity unavailable')
         return dict(deployment=self.fingerprint, operations=self.journal.operations(),
-                    management=self.management().status())
+                    management=observed)
 
     def restart(self, operation_id):
         """Replace only the owned management Job, reusing its persistent state.

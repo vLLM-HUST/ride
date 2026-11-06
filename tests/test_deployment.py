@@ -55,6 +55,7 @@ class Resources:
         self.owner, self.kind = owner, kind
 
     def start(self, name, spec, **kwargs):
+        self.owner.specifications[(self.kind, name)] = spec
         self.owner.calls.append((self.kind, name, kwargs))
         job = self.kind + '-' + name
         self.owner.records[(self.kind, name)] = dict(job_id=job, ready=True, job_status='RUNNING')
@@ -73,7 +74,7 @@ class Resources:
 
 class Management:
     def __init__(self):
-        self.calls = []; self.records = {}; self.stopped = []; self.identity = None
+        self.calls = []; self.records = {}; self.stopped = []; self.identity = None; self.specifications = {}
         self.models = Resources(self, 'models')
         self.controllers = Resources(self, 'controllers')
 
@@ -110,6 +111,7 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual([c[:2] for c in self.management.calls],
                          [('models', 'model-a'), ('controllers', 'controller-a')])
         self.assertEqual(self.management.calls[0][2]['expected_job_id'], None)
+        self.assertEqual(self.management.specifications[('models', 'model-a')]['job_name_prefix'], 'model-a')
         self.assertIn('python -m ride serve', self.ray.submitted[0]['entrypoint'])
         self.assertEqual(self.ray.submitted[0]['entrypoint_num_gpus'], 0)
 
@@ -321,14 +323,17 @@ class DeploymentTests(unittest.TestCase):
             client = RideClient(config['management']['endpoint'])
             job = client.models.describe('model-a')['job_id']
             self.assertEqual(len(self.ray.submitted), 2)  # management + model
-            restored = Runtime(runtime_config, self.ray); restored.health = runtime.health
+            health = runtime.health
+            runtime.close()
+            restored = Runtime(runtime_config, self.ray); restored.health = health
+            runtime = restored
             server.RequestHandlerClass = handler(runtime_config, restored)
             item.up()
             self.assertEqual(client.models.describe('model-a')['job_id'], job)
             item.stop()
             self.assertEqual(self.ray.stopped[0], job)
         finally:
-            item.close(); server.shutdown(); server.server_close(); thread.join()
+            item.close(); server.shutdown(); server.server_close(); thread.join(); runtime.close()
 
 
 if __name__ == '__main__':

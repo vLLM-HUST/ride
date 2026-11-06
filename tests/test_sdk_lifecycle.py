@@ -23,7 +23,7 @@ SPEC={'type':'vllm','model':'fixture-model','endpoint':'http://model.invalid:800
 class Lifecycle(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.path=Path(self.temp.name)/'state.json';self.ray=Ray();self.config={'state_file':str(self.path),'workspace':'fixture','model_services':[]};self.runtime=Runtime(self.config,self.ray)
-    def tearDown(self):self.temp.cleanup()
+    def tearDown(self):self.runtime.close();self.temp.cleanup()
     def start(self,operation='operation',prior=None,spec=None):
         return self.runtime.start_instance('model_services','model-a',spec or SPEC,operation_id=operation,expected_job_id=prior)
     def test_conditional_start_cannot_adopt_concurrently_created_job(self):
@@ -33,7 +33,7 @@ class Lifecycle(unittest.TestCase):
         self.assertEqual(len(self.ray.submitted),1)
         self.assertEqual(self.runtime.describe('model_services','model-a')['job_id'],foreign['job_id'])
     def test_repeated_operation_recovers_same_job_after_restart(self):
-        first=self.start();self.runtime=Runtime(self.config,self.ray)
+        first=self.start();self.runtime.close();self.runtime=Runtime(self.config,self.ray)
         self.assertEqual(self.start()['job_id'],first['job_id']);self.assertEqual(len(self.ray.submitted),1)
     def test_same_operation_different_payload_is_conflict(self):
         self.start()
@@ -42,7 +42,7 @@ class Lifecycle(unittest.TestCase):
     def test_unknown_submission_never_resubmits(self):
         self.ray.fail=True
         with self.assertRaises(OSError):self.start()
-        self.runtime=Runtime(self.config,self.ray)
+        self.runtime.close();self.runtime=Runtime(self.config,self.ray)
         with self.assertRaisesRegex(ValueError,'unknown'):self.start()
         self.assertEqual(len(self.ray.submitted),1)
     def test_conditional_stop_checks_identity(self):

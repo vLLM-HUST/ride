@@ -7,7 +7,7 @@ machines, bootstrap a shared Ray cluster there, then deploy RIDE, vLLM and
 independent Controllers. Implement in RIDE first; GenNova integration follows.
 This extends the existing-Ray-only rule for this explicit deployment mode; it
 does not authorize platform changes or interference with other workloads.
-Entry: scripts/one-click.sh machines-validate|machines-up|machines-status|machines-stop.
+Entry: scripts/one-click.sh machines-validate|machines-up|machines-status|machines-stop|machines-restart.
 Read docs/guides/MACHINE_DEPLOYMENT.md. Freeze machine identities before remote
 effects. Software/Mock readiness is not real cross-devbox/NPU acceptance.
 

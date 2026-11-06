@@ -59,14 +59,16 @@ def main(argv=None):
             if config.get('deployment') not in ('ray','local'):raise ValueError('Unsupported process deployment')
             from .runtime import Runtime
             runtime=Runtime(config)
-            for kind in ('model_services','controllers'):
-                for spec in config.get(kind,[]):
-                    if spec.get('autostart'):runtime.start_instance(kind,spec['id'])
-            host,port=a.listen.rsplit(':',1)
-            server=ThreadingHTTPServer((host,int(port)),handler(config,runtime))
-            print(json.dumps({'service':'ride','pid':os.getpid(),'listen':a.listen,'workspace':config['workspace']}),flush=True)
-            try:server.serve_forever()
-            finally:server.server_close()
+            try:
+                for kind in ('model_services','controllers'):
+                    for spec in config.get(kind,[]):
+                        if spec.get('autostart'):runtime.start_instance(kind,spec['id'])
+                host,port=a.listen.rsplit(':',1)
+                server=ThreadingHTTPServer((host,int(port)),handler(config,runtime))
+                print(json.dumps({'service':'ride','pid':os.getpid(),'listen':a.listen,'workspace':config['workspace']}),flush=True)
+                try:server.serve_forever()
+                finally:server.server_close()
+            finally:runtime.close()
             return
         if not a.resource:p.error('Specify controller or model-service')
         kind=KINDS[a.resource]

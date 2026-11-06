@@ -42,3 +42,10 @@ class Tests(unittest.TestCase):
     def test_legacy_start_remains_available(self):
         self.transport('POST','/api/v1/model-services/model-a/start',SPEC);self.transport('POST','/api/v1/model-services/model-a/start',SPEC)
         self.assertEqual(len(self.ray.submitted),1)
+    def test_explicit_null_stop_cannot_downgrade_to_legacy(self):
+        self.runtime.start_instance('model_services','model-a',SPEC,operation_id='start',expected_job_id=None)
+        for invalid in (None,'',False,0):
+            with self.subTest(invalid=invalid),self.assertRaises(ApiError) as error:
+                self.transport('POST','/api/v1/model-services/model-a/stop',{'expected_job_id':invalid})
+            self.assertEqual(error.exception.status,409)
+        self.assertEqual(self.ray.stopped,[])

@@ -57,7 +57,7 @@ class Journal:
             row = self.connection.execute("SELECT value FROM metadata WHERE key='state'").fetchone()
             return json.loads(row[0]) if row else {}
 
-    def execute(self, identifier, payload, effect):
+    def execute(self, identifier, payload, effect, *, on_complete=None):
         if not isinstance(identifier, str) or not 0 < len(identifier) <= 256:
             raise ValueError('Explicit bounded operation identifier required')
         serialized = canonical(payload)
@@ -76,9 +76,21 @@ class Journal:
             # or malformed responses leave an inspectable UNKNOWN record.
             result = effect()
             with self.transaction() as db:
+                if on_complete is not None:
+                    row = db.execute("SELECT value FROM metadata WHERE key='state'").fetchone()
+                    state = json.loads(row[0]) if row else {}
+                    on_complete(state, result)
+                    db.execute("INSERT OR REPLACE INTO metadata VALUES ('state', ?)", (canonical(state),))
                 db.execute("UPDATE operations SET status='COMPLETED',result=? WHERE id=?",
                            (canonical(result), identifier))
             return result
+
+    def completed_operations(self):
+        """Committed evidence for deterministic recovery; UNKNOWN is never included."""
+        with self.lock:
+            return [{'operation_id':row[0], 'payload':json.loads(row[1]), 'result':json.loads(row[2])}
+                    for row in self.connection.execute(
+                        "SELECT id,payload,result FROM operations WHERE status='COMPLETED' ORDER BY created")]
 
     def operations(self):
         with self.lock:
