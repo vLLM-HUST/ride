@@ -51,7 +51,7 @@
 
 **第1天：测量资格。** 新版RIDE/Request/KV/Instance沿已有成功one-click入口部署独立Ray Jobs；先核平台UI、实际身份和设备唯一性，再做少量真实两轮输出继承、Ready后激活、双排空、准确Job停止和原操作回执恢复。先使用已验证小模型验证协议；首个轻量模型结果不外推35B或SWE。没有通过此步不提交性能批次。
 
-历史三配对的离线核验发现，每对各12请求中均有2个续轮messages不同。temperature=0和固定生成token预算仍未保证相同文本；具体生成差异根因尚未查明，不归咎Controller或个人。新工具`experiments/workload/analyze_controller_pair.py`只核实际输入工作量；严格门槛与旧聚合门槛分列，旧结果不重标。
+实际模型输出若不同，反馈后的续轮messages也可能不同；temperature=0和固定生成token预算不能作为逐请求输入相同的证明。新工具`experiments/workload/analyze_controller_pair.py`只核实际输入工作量；严格门槛与旧聚合门槛分列，历史结果以benchmark归档和主计划为准，不重标。
 
 **容量/启动标定。** 先单副本，固定两档输入长度与两档输出预算，各做单任务和小批整批到达，实际usage核对输入/输出；不是客户端slot限制。所有请求正常完成/release后再进入下一格。分别记录Job提交→引擎Ready→限流层实际可用、实际生成/队列、采样预约和平台卡时；首次与后续启动分列，缓存命中和缺测保留。输入、批次大小与资源窗口在实际标定计划固定，不从历史吞吐拍脑袋设置负载。
 
