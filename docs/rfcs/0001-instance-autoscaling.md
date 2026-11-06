@@ -74,11 +74,13 @@
 
 ## 4. 相关工作与选型依据
 
+学术谱系、社区讨论及版本状态详见[Related Work：指标、性能建模与实例控制](0001-related-work.md)，收集8项研究工作、10个issue和1个合并状态核验PR；正文与评论/状态证据分列，不将提案充已实现。
+
 | 来源 | 采用范围 | 证据与限制 |
 |---|---|---|
 | [Dynamo Planner](https://docs.nvidia.com/dynamo/knowledge-base/modular-components/planner/choose-a-planner-mode) | 需求/容量/预测与执行反馈的整体结构 | 不能由其文档推断当前Ascend及FPM/性能估计链路已接通；本文不搬整套运行环境 |
 | [llm-d推荐扩缩入口](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/README.md) | 在途请求/队列基线 | WVA已废弃；推荐路径与实验路径分开，不新引入WVA |
-| [llm-d token-aware规则](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/optimized-baseline/base/scaledobject.yaml)及[说明](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/README.md) | 共置实例的积压与KV双触发建议 | 官方Experimental；复用规则思想并披露观测差异，不宣称完整等价移植 |
+| [llm-d token-aware规则](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/optimized-baseline/base/scaledobject.yaml)及[说明](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/README.md) | 共置实例的积压与KV双触发建议 | 固定来源版本标Experimental；主线已由PR #2956移除标记，见Related Work；复用规则并披露差异，不宣称等价移植 |
 | [arXiv:2609.20874v1](https://arxiv.org/html/2609.20874v1) | 简单平滑、启动前瞻、有界预测余量及消融 | 完整策略以模拟为主，硬件只验时序机制并注入固定延迟；正文称代码待发布，不充完整实机背书 |
 | [Llumnix，OSDI24](https://www.usenix.org/conference/osdi24/presentation/sun-biao) | 状态影响重配置的动机及后续强相关基线 | 本RFC不实现其请求/状态迁移，不能声称已拥有迁移能力 |
 
@@ -91,7 +93,7 @@ llm-d来源固定为343d9be9813020f43aeb5a5b97cb459102bb5893，[许可证为Apac
 | 已有工作与直接来源 | 学习并纳入本设计的内容 | 适配与证据边界 |
 |---|---|---|
 | [vLLM Production Metrics](https://docs.vllm.ai/en/latest/usage/metrics/) | 复用`/metrics`及队列、阶段时延、KV、抢占和token指标语义；优先沿用原生采集 | 最新文档不是当前Ascend镜像的能力清单。先核HELP/TYPE、源码和实样，字段缺失不改名伪装等价 |
-| [llm-d token-aware autoscaling](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/README.md) | 学习按阶段选择信号：prefill工作量经本机标定换算成时间，KV单独表达状态容量；第7.2节已有对应适配 | 上游强调uncached token；本期完整输入预算是代理，必须披露偏差。该路径为Experimental，不搬上游容量常数 |
+| [llm-d token-aware autoscaling](https://github.com/llm-d/llm-d/blob/343d9be9813020f43aeb5a5b97cb459102bb5893/guides/workload-autoscaling/keda-epp-token-aware/README.md) | 学习按阶段选择信号：prefill工作量经本机标定换算成时间，KV单独表达状态容量；第7.2节已有对应适配 | 上游强调uncached token；本期完整输入预算是代理，必须披露偏差。固定引用版本带Experimental；主线已合并移除标记，见Related Work；不搬上游容量常数 |
 | [Dynamo Planner v1.6.1 Design](https://docs.nvidia.com/dynamo/v1.6.1/knowledge-base/modular-components/planner/planner-design) | 学习流量/引擎观测到预测、容量建议、约束与执行的分离；使用不同时间尺度处理持续需求与即时压力 | 其FPM/性能模型及GPU链路未在本项目Ascend验证，不因借鉴结构就宣称同等SLA预测能力 |
 | [vLLM Doctor TTFT规则](https://docs.vllm.doctor/rules/ttft-bottleneck/)、[维护者仓库](https://github.com/vllm-doctor/vllm-doctor) | 学习联合TTFT、TPOT与队列提供证据、可能瓶颈和后续检查，作为第6.5节诊断表的参考 | 独立社区项目，非vLLM官方；当前核的是公开文档，未验收代码。其confidence是规则匹配等级，不是已校准因果概率；不照搬默认阈值，不自动改变业务配置 |
 
