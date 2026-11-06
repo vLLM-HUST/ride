@@ -2,14 +2,27 @@
 
 项目目标、范围与阶段验收：[中长期规划](../PROJECT_PLAN.md)。系统边界：[统一技术设计](INDEPENDENT_CONTROLLERS.md)。本表是唯一跨仓库任务状态，更新于2026-11-06；软件、云端托管、真模型和收益分别核销。
 
+## 当前研究顺序（2026-11-06用户确认逐项推进）
+
+**唯一活动主线：第一项Instance，当前为前置资格及测量准备；本轮只制定计划，未提交新资源、模型或性能作业。** 各项问题、基线、周期和出口见[中长期规划第2–4节](../PROJECT_PLAN.md#2-未来三至六个月按顺序完成四项研究)。下面勾选仅代表该项完整出口通过，不用旧软件通过或历史模型功能替代。
+
+- [ ] 前置：新组合真实Ray/模型生命周期；输入/输出工作量核验；单副本容量与启动成本标定。
+- [ ] 第一项Instance：成熟工作量感知策略接入，强基线、独立重复、留出、收益/负结果与边界判读。
+- [ ] 第二项缓存感知路由：固定副本，隔离真实缓存/负载取舍，完成强基线与效力边界；尚未启动。
+- [ ] 第三项KV：单一真实后端状态资格，再测保留/恢复与重算成本；尚未启动新策略。
+- [ ] 第四项协同：以实测冲突为前提，比独立组合验证增量及消融；尚未启动。
+- [ ] 后续完整控制域：引擎/P-D、模型/LoRA、并行拓扑、工作流/SLO与外部复用按依赖逐项立题；尚未启动。
+
+立即下一份交付物：Instance容量与启动标定、工作量核验及首个匹配发现对照的冻结方案；先核来源/基线与所需观察字段，再按既有授权和资源门禁执行。每周按规划第5节五问复盘；只有本表更新任务状态。
+
 ## 项目对齐表
 
 | 项目 | 责任 | 本轮实际进度 | 下一项 |
 |---|---|---|---|
-| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.4 7551ee5：统一对象/版本/条件动作与持久回执，90项Mac及实际Coder Linux软件检查通过，新Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)未合并，组织证据review开放 | 新版本真实Ray/NPU资格；其余对象域按实际调用接入 |
-| request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 0.1.2 7ad7b12：Instance对象视图及版本化activate/drain/remove接公共SDK；107项Mac及Coder Linux通过、4可选跳过；原ThunderAgent核心不变；GitHub CI付款/额度导致未启动 | 新组合真机资格；非空Router恢复仍不支持 |
-| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.6 08f85c0：实际控制循环使用版本动作、丢回复后查原回执、排空进展重新采样、接收方世代替换拒绝；43项Mac/Coder Linux及Linux CI通过，策略公式未改 | 新版本Ray/NPU闭环，再做有效工作量匹配对照 |
-| [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.4 a3a134d：Instance成员对象及原子条件动作、Job绑定与单向排空；45项Mac/Coder Linux及Linux CI通过；当前后端copy=false | 既有支持后端单独验真实KV字节及续轮，保留r19失败 |
+| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.4 7551ee5：统一对象/版本/条件动作与持久回执，90项Mac及实际Coder Linux软件检查通过，新Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)未合并，组织证据review开放 | 为Instance完成新版真实Ray/NPU资格；其余对象域暂不并行铺开 |
+| request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 0.1.2 7ad7b12：Instance对象视图及版本化activate/drain/remove接公共SDK；107项Mac及Coder Linux通过、4可选跳过；原ThunderAgent核心不变；GitHub CI付款/额度导致未启动 | 本阶段作为共同配置，不改策略；SWE/B1暂停，非空Router恢复仍不支持 |
+| [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.6 08f85c0：实际控制循环使用版本动作、丢回复后查原回执、排空进展重新采样、接收方世代替换拒绝；43项Mac/Coder Linux及Linux CI通过，策略公式未改 | 唯一研究主线：容量/启动/工作量资格，再做成熟策略匹配对照 |
+| [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.4 a3a134d：Instance成员对象及原子条件动作、Job绑定与单向排空；45项Mac/Coder Linux及Linux CI通过；当前后端copy=false | 研究顺序第三项；本阶段保持原能力，真实KV与r19失败仍开放 |
 | ride-cooperative-controllers | 历史来源与集成证据 | 保留原件，不再添加正式策略；r19失败不重标 | 供迁移比对，不维持第二份开发计划 |
 | ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
 
