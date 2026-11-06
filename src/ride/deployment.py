@@ -193,7 +193,9 @@ class Deployment:
             return True
         return False
 
-    def management_submission(self):
+    def management_submission(self, generation=None):
+        if generation is None:
+            generation = self.journal.snapshot().get('management_generation', 0)
         config = dict(name=self.identity, workspace=self.plan['name'], deployment='ray',
                       ray_address=self.plan['ray']['address'],
                       state_file=self.plan['management']['state_file'],
@@ -206,7 +208,10 @@ class Deployment:
             raise ValueError('Staged management configuration changed')
         path.write_text(content)
         environment = dict(self.plan['management'].get('runtime_env', {}), working_dir=str(staging))
-        return dict(submission_id=self.plan['name'] + '-management-' + self.fingerprint[:12],
+        identifier = self.plan['name'] + '-management-' + self.fingerprint[:12]
+        if generation:
+            identifier += '-g' + str(generation)
+        return dict(submission_id=identifier,
                     entrypoint=shlex.join(['python', '-m', 'ride', 'serve', '--config',
                                           'ride-deployment.json', '--listen', self.plan['management']['listen']]),
                     runtime_env=environment, entrypoint_num_cpus=0.1, entrypoint_num_gpus=0,
@@ -215,6 +220,8 @@ class Deployment:
 
     def up(self):
         with self.locked():
+            if self.journal.snapshot().get('pending_restart'):
+                raise ValueError('Resolve the pending management restart with its original operation identifier')
             for binding in self.plan.get('model_bindings', []):
                 if not os.environ.get(binding['token_env']):
                     raise ValueError('Missing peer token environment: ' + binding['token_env'])
@@ -231,7 +238,9 @@ class Deployment:
             ray = self.wait(lambda: {'client': self.ray()},
                             lambda observed: 'client' in observed, 'Ray Jobs API')['client']
             submission = self.management_submission()
-            result = self.journal.execute('start-management', submission,
+            generation = self.journal.snapshot().get('management_generation', 0)
+            operation = 'start-management' + ('-' + str(generation) if generation else '')
+            result = self.journal.execute(operation, submission,
                                           lambda: {'job_id': ray.submit_job(**submission)})
             if result.get('job_id') != submission['submission_id']:
                 raise ValueError('Management submission identity mismatch')
@@ -297,9 +306,92 @@ class Deployment:
         return dict(deployment=self.fingerprint, operations=self.journal.operations(),
                     management=self.management().status())
 
+    def restart(self, operation_id):
+        """Replace only the owned management Job, reusing its persistent state.
+
+        Explicit operation IDs make operator retries safe. Unknown stop or
+        submission results remain UNKNOWN and cannot be bypassed by up.
+        """
+        if not isinstance(operation_id, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,63}', operation_id):
+            raise ValueError('Explicit bounded restart operation identifier required')
+        with self.locked():
+            def intent(state):
+                if state.get('stopping'):
+                    raise ValueError('Deployment is stopping or stopped')
+                previous = state.setdefault('restarts', {}).get(operation_id)
+                if previous is not None:
+                    return previous
+                if state.get('pending_restart'):
+                    raise ValueError('Another management restart is pending')
+                generation = state.get('management_generation', 0)
+                previous = {'from': generation, 'to': generation + 1}
+                state['restarts'][operation_id] = previous
+                state['pending_restart'] = operation_id
+                return previous
+            operations = {item['operation_id']: item['status'] for item in self.journal.operations()}
+            if operations.get('start-management') != 'COMPLETED':
+                raise ValueError('No known management submission to restart')
+            record = self.journal.mutate(intent)
+            if 'result' in record:
+                return record['result']
+            ray = self.ray(); client = self.management()
+            if 'before' in record:
+                before = record['before']
+            else:
+                # Persist once, before stopping. On resume the current API may
+                # already be the replacement, or the old API may be offline.
+                observed = client.status()
+                if not self.verify_management(observed):
+                    raise ValueError('Management snapshot unavailable before controlled restart')
+                before = {key: observed[key] for key in
+                          ('management_pid', 'run_id', 'model_services', 'controllers') if key in observed}
+                self.journal.mutate(lambda state: state['restarts'][operation_id].update(before=before))
+            old = self.management_submission(record['from'])
+            info = ray.get_job_info(old['submission_id'])
+            if info.entrypoint != old['entrypoint'] or info.metadata.get('ride_deployment') != self.fingerprint:
+                raise ValueError('Management Job identity conflict')
+            def stop_old():
+                if ray.get_job_info(old['submission_id']).status.value in ('STOPPED', 'FAILED', 'SUCCEEDED'):
+                    return {'already_terminal': True}
+                return {'stopped': ray.stop_job(old['submission_id'])}
+            self.journal.execute('restart-' + operation_id + '-stop', {'job_id': old['submission_id']}, stop_old)
+            self.wait(lambda: {'job_status': ray.get_job_info(old['submission_id']).status.value},
+                      lambda result: result.get('job_status') in ('STOPPED', 'SUCCEEDED', 'FAILED'),
+                      'old management stop')
+            new = self.management_submission(record['to'])
+            self.journal.execute('start-management-' + str(record['to']), new,
+                                 lambda: {'job_id': ray.submit_job(**new)})
+            self.check_management_job(ray, new)
+            def replacement_ready(observed):
+                if not self.verify_management(observed):
+                    return False
+                if ray.get_job_info(new['submission_id']).status.value != 'RUNNING':
+                    return False
+                if before.get('management_pid') and observed.get('management_pid') == before['management_pid']:
+                    return False
+                if before.get('run_id') and observed.get('run_id') != before['run_id']:
+                    raise ValueError('Replacement management did not adopt persistent state')
+                for kind in ('model_services', 'controllers'):
+                    expected = {item['id']: item['job_id'] for item in before.get(kind, [])}
+                    actual = {item['id']: item['job_id'] for item in observed.get(kind, [])}
+                    if expected != actual:
+                        raise ValueError('Replacement management changed owned service identities')
+                return True
+            self.wait(client.status, replacement_ready, 'replacement management')
+            result = {'status': 'PASS', 'scope': 'management replacement readiness only',
+                      'old_job_id': old['submission_id'], 'job_id': new['submission_id']}
+            def complete(state):
+                state['management_generation'] = record['to']
+                state['restarts'][operation_id]['result'] = result
+                state.pop('pending_restart', None)
+            self.journal.mutate(complete)
+            return result
+
     def stop(self):
         """Explicit destructive service stop; preserve Ray and all platform objects."""
         with self.locked():
+            if self.journal.snapshot().get('pending_restart'):
+                raise ValueError('Resolve pending management restart before stopping services')
             self.journal.mutate(lambda state: state.update(stopping=True))
             ray = self.ray(); client = self.management()
             operations = {item['operation_id']: item['status'] for item in self.journal.operations()}
@@ -334,9 +426,10 @@ class Deployment:
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Deploy a complete RIDE service onto explicit machines / existing Ray')
-    parser.add_argument('action', choices=['validate', 'up', 'status', 'stop'])
+    parser.add_argument('action', choices=['validate', 'up', 'status', 'stop', 'restart'])
     parser.add_argument('plan', type=Path)
     parser.add_argument('directory', type=Path)
+    parser.add_argument('--operation-id', help='Required for management restart; reuse on retry')
     args = parser.parse_args(argv)
     deployment = None
     try:
@@ -346,7 +439,8 @@ def main(argv=None):
             print(json.dumps({'status': 'PASS', 'scope': 'configuration only; no remote checks'}))
             return
         deployment = Deployment(plan, args.directory)
-        print(json.dumps(getattr(deployment, args.action)(), indent=2))
+        result = deployment.restart(args.operation_id) if args.action == 'restart' else getattr(deployment, args.action)()
+        print(json.dumps(result, indent=2))
     except (ValueError, KeyError, TypeError, OSError, RuntimeError, subprocess.SubprocessError) as error:
         print(json.dumps({'status': 'FAIL', 'error': str(error), 'type': type(error).__name__}))
         raise SystemExit(1) from error

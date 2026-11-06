@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-if [[ $# -eq 3 && ( "$1" == machines-validate || "$1" == machines-up || "$1" == machines-status || "$1" == machines-stop ) ]]; then
-  exec "${RIDE_PYTHON:-python3}" -m ride.deployment "${1#machines-}" "$2" "$3"
+if [[ $# -ge 3 && ( "$1" == machines-validate || "$1" == machines-up || "$1" == machines-status || "$1" == machines-stop || "$1" == machines-restart ) ]]; then
+  exec "${RIDE_PYTHON:-python3}" -m ride.deployment "${1#machines-}" "${@:2}"
 fi
 if [[ $# -eq 3 && ( "$1" == local-start || "$1" == local-stop ) ]]; then
   exec "${RIDE_PYTHON:-python3}" "$root/scripts/local_controller.py" "$1" "$2" "$3"

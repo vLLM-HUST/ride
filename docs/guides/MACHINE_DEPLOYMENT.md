@@ -141,6 +141,18 @@ bash scripts/one-click.sh machines-stop deployment.json .ride/deployment
 不删除 devbox/卷/共享权重。正常在线缩容仍应使用实例 Controller 的请求/KV 排空契约。
 停止后需核终态；停止中的部署不允许 up 自动重建。管理状态和部署 Journal 均保留。
 
+管理进程的受控重启（模型和 Controller 继续运行）：
+
+```bash
+bash scripts/one-click.sh machines-restart deployment.json .ride/deployment --operation-id restart-1
+```
+
+必须使用明确 operation ID，重试沿用同一个 ID。先持久保存原管理状态和服务 Job
+身份，准确停止原管理 Job，等待终态，再以同一持久 state_file 创建新的管理 Job。
+核对新进程、原 run_id 及模型/Controller Job 身份后才完成接管。停止或提交未知时
+保留 UNKNOWN，其他 up/stop 不得绕过未完成的重启；不实现自动故障转移或高可用。
+首次受控重启要求原管理 API 可读；已离线且没有快照的故障恢复尚未实现。
+
 ## 分阶段验收
 
 1. 软件：顺序、配置冲突、就绪阻断、重复部署、未知提交、准确停止和安装入口。

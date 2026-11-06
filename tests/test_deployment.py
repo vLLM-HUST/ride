@@ -186,6 +186,28 @@ class DeploymentTests(unittest.TestCase):
         item.close()
         self.assertEqual(len(self.ray.stopped), 1)
 
+    def test_management_restart_preserves_services_and_has_explicit_idempotence(self):
+        item = self.deployment(); item.up()
+        original = self.ray.submitted[0]['submission_id']
+        result = item.restart('restart-1')
+        self.assertNotEqual(result['job_id'], original)
+        self.assertEqual(item.restart('restart-1'), result)
+        item.up()
+        self.assertEqual(len(self.ray.submitted), 2)
+        self.assertEqual(len(self.management.calls), 2)
+        self.assertEqual(self.management.stopped, [])
+        item.stop(); item.close()
+        self.assertEqual(self.ray.stopped, [original, result['job_id']])
+
+    def test_unknown_restart_submission_cannot_be_replayed_or_bypassed(self):
+        item = self.deployment(); item.up(); self.ray.fail = True
+        with self.assertRaises(OSError): item.restart('restart-1')
+        with self.assertRaises(UnknownOutcome): item.restart('restart-1')
+        with self.assertRaisesRegex(ValueError, 'restart'): item.up()
+        item.close()
+        self.assertEqual(len(self.ray.submitted), 2)
+        self.assertEqual(self.management.stopped, [])
+
     def test_cluster_config_changed_after_validation_never_runs(self):
         path = self.root / 'cluster.json'
         path.write_text(json.dumps({'cluster_name': 'myc-test',
