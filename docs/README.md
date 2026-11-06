@@ -12,3 +12,10 @@ RIDE 是控制面，Controller 是独立进程，Ray 是执行底座。
 
 临时 drawio 发布回执、预览图片和生成中间文件放 `results/document-publishing/`。
 新增文档按用途归类，顶层只保留导航；不把工具 JSON 输出当规范文档。
+
+## Independent controllers
+
+- [统一技术设计](architecture/INDEPENDENT_CONTROLLERS.md)
+- [跨项目统一路线图](architecture/CONTROLLER_ROADMAP.md)
+
+项目目标与阶段验收：[RIDE 项目中长期规划](PROJECT_PLAN.md)；任务执行状态统一在[跨仓库路线图](architecture/CONTROLLER_ROADMAP.md)。

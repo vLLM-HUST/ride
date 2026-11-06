@@ -1,0 +1,664 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "RIDE independent controller architecture",
+    "direction": "TB",
+    "theme": "light",
+    "gap": 70
+  },
+  "groups": [
+    {
+      "id": "ride",
+      "label": "ride 仓库 · SDK 与管理服务"
+    },
+    {
+      "id": "ray",
+      "label": "Ray 集群 · 独立 Job 托管"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "title",
+      "label": "RIDE · 独立 Controller 控制面",
+      "description": "目标设计：独立仓库、公共接口、统一托管",
+      "position": {
+        "x": 180,
+        "y": 0
+      },
+      "size": {
+        "width": 1200,
+        "height": 75
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "request-repo",
+      "label": "request-throttling-controller",
+      "description": "请求策略 · 配置 · 测试",
+      "position": {
+        "x": 210,
+        "y": 145
+      },
+      "size": {
+        "width": 350,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "instance-repo",
+      "label": "instance-controller",
+      "description": "扩缩策略 · 配置 · 测试",
+      "position": {
+        "x": 610,
+        "y": 145
+      },
+      "size": {
+        "width": 350,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "kv-repo",
+      "label": "kv-controller",
+      "description": "KV 策略 · 后端适配 · 测试",
+      "position": {
+        "x": 1010,
+        "y": 145
+      },
+      "size": {
+        "width": 350,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "sdk",
+      "label": "RIDE SDK",
+      "description": "开发契约 · 配置与身份 · 管理客户端 · Controller 协作接口",
+      "position": {
+        "x": 210,
+        "y": 340
+      },
+      "size": {
+        "width": 1150,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "discovery",
+      "label": "注册与发现",
+      "description": "类型 / 实例 / 服务端点",
+      "position": {
+        "x": 210,
+        "y": 515
+      },
+      "size": {
+        "width": 250,
+        "height": 85
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "lifecycle",
+      "label": "模型生命周期",
+      "description": "启动 / 就绪 / 排空 / 停止",
+      "position": {
+        "x": 510,
+        "y": 515
+      },
+      "size": {
+        "width": 250,
+        "height": 85
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "jobs",
+      "label": "Ray Job 管理",
+      "description": "提交 / 资源 / 状态 / 日志",
+      "position": {
+        "x": 810,
+        "y": 515
+      },
+      "size": {
+        "width": 250,
+        "height": 85
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "state",
+      "label": "身份与操作记录",
+      "description": "所有权 / 幂等 / 未知结果",
+      "position": {
+        "x": 1110,
+        "y": 515
+      },
+      "size": {
+        "width": 250,
+        "height": 85
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "api",
+      "label": "RIDE 管理服务 · Control API",
+      "description": "",
+      "position": {
+        "x": 210,
+        "y": 655
+      },
+      "size": {
+        "width": 1150,
+        "height": 55
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ride"
+    },
+    {
+      "id": "request-job",
+      "label": "Request Throttling Job",
+      "description": "请求等待 · 并发限制 · 任务归属",
+      "position": {
+        "x": 210,
+        "y": 865
+      },
+      "size": {
+        "width": 350,
+        "height": 125
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ray"
+    },
+    {
+      "id": "instance-job",
+      "label": "Instance Controller Job",
+      "description": "需求观测 · 副本决策 · 双排空",
+      "position": {
+        "x": 610,
+        "y": 865
+      },
+      "size": {
+        "width": 350,
+        "height": 125
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ray"
+    },
+    {
+      "id": "kv-job",
+      "label": "KV Controller Job",
+      "description": "缓存观测 · 策略决策 · 动作验证",
+      "position": {
+        "x": 1010,
+        "y": 865
+      },
+      "size": {
+        "width": 350,
+        "height": 125
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ray"
+    },
+    {
+      "id": "client",
+      "label": "业务客户端",
+      "description": "",
+      "position": {
+        "x": 20,
+        "y": 892
+      },
+      "size": {
+        "width": 140,
+        "height": 70
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "models",
+      "label": "vLLM 实例池 · A / B / …",
+      "description": "RIDE 管理模型进程；实例独立申请计算资源",
+      "position": {
+        "x": 210,
+        "y": 1110
+      },
+      "size": {
+        "width": 750,
+        "height": 95
+      },
+      "style": {
+        "fill": "#f3f5ef",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ray"
+    },
+    {
+      "id": "cache",
+      "label": "缓存与搬运后端",
+      "description": "LMCache / Mooncake / 其他适配器",
+      "position": {
+        "x": 1010,
+        "y": 1110
+      },
+      "size": {
+        "width": 350,
+        "height": 95
+      },
+      "style": {
+        "fill": "#f3f5ef",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "ray"
+    },
+    {
+      "id": "rule",
+      "label": "独立进程 · 独立版本 · 独立状态；跨 Controller 通过 API 协作",
+      "description": "",
+      "position": {
+        "x": 210,
+        "y": 1270
+      },
+      "size": {
+        "width": 1150,
+        "height": 45
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "dev-caption",
+      "label": "开发与发布",
+      "description": "",
+      "position": {
+        "x": 210,
+        "y": 100
+      },
+      "size": {
+        "width": 1150,
+        "height": 25
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "request-repo-sdk",
+      "from": "request-repo",
+      "to": "sdk",
+      "label": "依赖 ride · 注册插件",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.15217391304347827,
+        "color": "#454b43",
+        "dashed": true,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "instance-repo-sdk",
+      "from": "instance-repo",
+      "to": "sdk",
+      "label": "依赖 ride · 注册插件",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": true,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "kv-repo-sdk",
+      "from": "kv-repo",
+      "to": "sdk",
+      "label": "依赖 ride · 注册插件",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.8478260869565217,
+        "color": "#454b43",
+        "dashed": true,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "sdk-discovery",
+      "from": "sdk",
+      "to": "discovery",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.10869565217391304,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "discovery-api",
+      "from": "discovery",
+      "to": "api",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.10869565217391304,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "sdk-lifecycle",
+      "from": "sdk",
+      "to": "lifecycle",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.3695652173913043,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "lifecycle-api",
+      "from": "lifecycle",
+      "to": "api",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.3695652173913043,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "sdk-jobs",
+      "from": "sdk",
+      "to": "jobs",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.6304347826086957,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "jobs-api",
+      "from": "jobs",
+      "to": "api",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.6304347826086957,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "sdk-state",
+      "from": "sdk",
+      "to": "state",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.8913043478260869,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "state-api",
+      "from": "state",
+      "to": "api",
+      "label": "",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.8913043478260869,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "request-job-control",
+      "from": "request-job",
+      "to": "api",
+      "label": "SDK / 控制调用",
+      "style": {
+        "source_port": "north",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.15217391304347827,
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "instance-job-control",
+      "from": "instance-job",
+      "to": "api",
+      "label": "SDK / 控制调用",
+      "style": {
+        "source_port": "north",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "kv-job-control",
+      "from": "kv-job",
+      "to": "api",
+      "label": "SDK / 控制调用",
+      "style": {
+        "source_port": "north",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.8478260869565217,
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "inference-in",
+      "from": "client",
+      "to": "request-job",
+      "label": "",
+      "style": {
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "inference-out",
+      "from": "request-job",
+      "to": "models",
+      "label": "推理请求",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.23333333333333334,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "cache-control",
+      "from": "kv-job",
+      "to": "cache",
+      "label": "后端控制 API",
+      "style": {
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "cache-data",
+      "from": "models",
+      "to": "cache",
+      "label": "KV",
+      "style": {
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "color": "#454b43",
+        "dashed": false,
+        "width": 1.4
+      }
+    },
+    {
+      "id": "peer-coordination",
+      "from": "request-job",
+      "to": "kv-job",
+      "label": "Controller 协作 API",
+      "style": {
+        "source_port": "south",
+        "target_port": "south",
+        "source_offset": 0.8,
+        "target_offset": 0.2,
+        "color": "#454b43",
+        "dashed": true,
+        "width": 1.4
+      }
+    }
+  ]
+}

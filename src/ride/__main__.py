@@ -33,7 +33,7 @@ def parser():
             s.add_argument('--ray-address',default='http://127.0.0.1:8265')
             s.add_argument('--state-file',default='.ride/state.json');s.add_argument('--workspace',default=os.environ.get('CODER_WORKSPACE_NAME','local-development'))
             s.add_argument('--name');s.add_argument('--backend');s.add_argument('--endpoint');s.add_argument('--model-service');s.add_argument('--model')
-            s.add_argument('--executor',choices=['ray']);s.add_argument('--transport',choices=['upstream-default','no-keepalive'])
+            s.add_argument('--executor',choices=['ray','local']);s.add_argument('--transport',choices=['upstream-default','no-keepalive'])
             s.add_argument('--port',type=int);s.add_argument('--num-cpus',type=float);s.add_argument('--num-gpus',type=float)
             s.add_argument('--runtime-env',help='JSON object');s.add_argument('--resources',help='Ray custom resources JSON object')
             s.add_argument('--model-arg',action='append',help='vllm argument; use --model-arg=--option for flags')
@@ -55,18 +55,20 @@ def main(argv=None):
             return
         if a.command=='serve' or (a.command=='start' and not a.resource):
             if a.command=='serve' and a.resource:p.error('serve accepts control-plane configuration only')
-            config=json.loads(Path(a.config).read_text()) if a.config else {'name':'RIDE','deployment':'ray','workspace':a.workspace,'state_file':a.state_file,'ray_address':a.ray_address,'controllers':[],'model_services':[]}
-            if config.get('deployment')!='ray':raise ValueError('Only Ray process deployment is implemented')
+            config=json.loads(Path(a.config).read_text()) if a.config else {'name':'RIDE','deployment':a.executor or 'ray','workspace':a.workspace,'state_file':a.state_file,'ray_address':a.ray_address,'controllers':[],'model_services':[]}
+            if config.get('deployment') not in ('ray','local'):raise ValueError('Unsupported process deployment')
             from .runtime import Runtime
             runtime=Runtime(config)
-            for kind in ('model_services','controllers'):
-                for spec in config.get(kind,[]):
-                    if spec.get('autostart'):runtime.start_instance(kind,spec['id'])
-            host,port=a.listen.rsplit(':',1)
-            server=ThreadingHTTPServer((host,int(port)),handler(config,runtime))
-            print(json.dumps({'service':'ride','pid':os.getpid(),'listen':a.listen,'workspace':config['workspace']}),flush=True)
-            try:server.serve_forever()
-            finally:server.server_close()
+            try:
+                for kind in ('model_services','controllers'):
+                    for spec in config.get(kind,[]):
+                        if spec.get('autostart'):runtime.start_instance(kind,spec['id'])
+                host,port=a.listen.rsplit(':',1)
+                server=ThreadingHTTPServer((host,int(port)),handler(config,runtime))
+                print(json.dumps({'service':'ride','pid':os.getpid(),'listen':a.listen,'workspace':config['workspace']}),flush=True)
+                try:server.serve_forever()
+                finally:server.server_close()
+            finally:runtime.close()
             return
         if not a.resource:p.error('Specify controller or model-service')
         kind=KINDS[a.resource]
