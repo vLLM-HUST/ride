@@ -17,8 +17,12 @@
 
 2026-11-06 新优先项（本对话）：机器部署基础底座，先 RIDE，后 GenNova。
 `codex/devbox-deployment` 独立 worktree 实现 `machines-*` 入口，复用官方 Ray
-launcher 与公开 SDK；首批部署正反例通过，完整安装/云端/NPU验收尚未完成。
-验收按单 devbox → 双 devbox 双 TP1 → 生命周期/接管推进；单模型跨机器另验。
+launcher 与公开 SDK。30ec6a4 冷启动两个 devbox/两个 TP1 vLLM 与请求 Controller，
+3a4adde 管理重启入口保留模型和已有 program，合计 9 次真实生成；7 个 Job 与
+两个临时工作区已归档清理。两个 devbox 同物理宿主，性能未运行。
+随后合入 498fa8b 的 0.3.3 安全修复，101 项软件及 CLI/构建检查通过；最新组合
+尚未重新上卡。见[验证清单](../../evidence/machine-deployment-20261106/summary.json)。
+GenNova 尚未消费该入口；单模型跨机器及跨物理主机另验。
 该项不改写下方已有 Controller 软件、功能和性能实验的状态。
 
 - [x] M0：独立仓库、公共RIDE开发范式、设计与架构图、中长期规划落盘。

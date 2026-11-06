@@ -1,7 +1,10 @@
 # 从指定机器部署完整 RIDE 服务
 
-状态：2026-11-06 开发中，尚未完成双 devbox / NPU 验收。入口的 PASS
-只表示部署就绪检查通过，不证明真实推理、Controller 动作或性能收益。
+状态：2026-11-06，固定提交的双 devbox、双 TP1 功能链已完成 9 次真实生成，
+含请求等待/恢复、管理接管和停止隔离。冷启动使用 30ec6a4，管理重启入口使用
+3a4adde；随后合入上游 0.3.3 安全修复的开发版通过 101 项软件检查，尚未重新
+执行 NPU 验收。短证据见[验证清单](../../evidence/machine-deployment-20261106/summary.json)。
+入口自身的 PASS 只表示部署就绪检查通过，不证明真实推理、Controller 动作或性能收益。
 本功能在 RIDE 实现；gennova-d 后续消费，不复制部署器。
 
 ## 用户入口与责任
@@ -46,17 +49,20 @@ bootstrap 的 Ray launcher setup_commands 可以安装明确版本依赖；本�
     "args": ["--tensor-parallel-size", "1"], "runtime_env": {}
   }],
   "controllers": [{
-    "id": "throttle-a", "type": "request-throttling",
+    "id": "throttle-a", "type": "request-throttling-managed",
     "model_service": "model-a", "backend": "http://10.0.0.11:8000",
     "endpoint": "http://10.0.0.10:9000", "port": 9000,
+    "configuration": "/persistent/throttle-a.json",
+    "configuration_sha256": "REPLACE_WITH_FROZEN_SHA256",
     "resources": {"node:10.0.0.10": 0.001}, "num_gpus": 0
   }],
   "readiness_timeout_seconds": 600
 }
 ```
 
-Controller spec 原样交给已安装插件；独立请求 Controller 的配置应以该包当前契约为准。
-上例内置类型沿现有兼容入口；不能据此声称已验收新版独立包。
+Controller 的 configuration 内容及 peer token 以独立请求包的当前契约为准；
+文件必须分发到管理和执行节点，且 ID、endpoint 和 SHA 相符。Controller 的
+runtime_env 必须注入凭据，操作环境也需设置同一 token 变量；不把凭据放在命令行。
 各节点安装固定 RIDE/Controller/引擎版本，或在相应 runtime_env 配置固定依赖。
 管理 Job 的 working_dir 由入口上传冻结配置；模型和 Controller 使用各自 runtime_env。
 管理 Job 必须固定节点，state_file 的父目录在该节点上预先存在且可持久写入。
@@ -139,7 +145,8 @@ bash scripts/one-click.sh machines-stop deployment.json .ride/deployment
 
 仅按记录依次停止 Controller、模型、管理 Job；不运行 ray down/ray stop，
 不删除 devbox/卷/共享权重。正常在线缩容仍应使用实例 Controller 的请求/KV 排空契约。
-停止后需核终态；停止中的部署不允许 up 自动重建。管理状态和部署 Journal 均保留。
+停止后需核终态；停止中的部署不允许 up 自动重建。重新部署需新 name、操作目录
+及专用管理 state_file，不把另一个部署的状态文件拿来覆盖。管理状态和部署 Journal 均保留。
 
 管理进程的受控重启（模型和 Controller 继续运行）：
 
@@ -163,3 +170,21 @@ bash scripts/one-click.sh machines-restart deployment.json .ride/deployment --op
 
 首轮固定两个已分配 devbox、至多两张 NPU；具体平台、工作区、物理设备、源码、
 镜像、模型和运维收尾时间须在真实执行前冻结。无有效身份/网络/设备证据不提交模型。
+
+## 本轮结果及尚未验收的范围
+
+- 固定版本冷启动：官方 launcher 创建两个 Ray 节点，随后独立管理 Job、两个
+  TP1 vLLM Job、请求 Controller Job 就绪并激活模型池。启动命令退出后服务继续运行。
+- 真实业务：9 次非流式生成，3 个两轮 program，第二轮带回上一轮真实输出。
+  等待/恢复使用公开 drain/activate 门控，不是容量限流收益或算法对照。
+- 管理进程 PID 15628→23186，run_id、模型/Controller Job 及 program 后端保持；
+  重复相同重启和 up 没有新建服务；停止请求 Controller 后模型直连仍可用。
+- 7 个 Job 已终止；原件与停止日志按 SHA 下载验证后，两个临时工作区及其
+  Pod/Deployment/Service/PVC/PV 均删除，2 张 NPU 申请释放，物理卡进程已核实。
+- r2 漏验收脚本、r3 缺 venv Ray console、r4 最小 Ray 无 Jobs API 的失败均保留。
+  原运行的自动 Job ID 不改写；开发版现在默认用实例 ID 作为 Job 名前缀。
+- 当前两个 devbox 位于同一物理宿主；跨物理主机、单模型跨机器 TP/PP、流式请求、
+  长稳、故障自动恢复、界面入口和性能收益未在此轮验收。原管理 API 已离线且无
+  快照的恢复、UNKNOWN 自动核销仍不支持。
+- 后续 0.3.3 集成新增状态单写者/持久化修复、Job 名前缀和地址回执，仅软件验证；
+  不把旧固定提交的硬件证据外推为这组最新代码已经完成同样的真机验收。
