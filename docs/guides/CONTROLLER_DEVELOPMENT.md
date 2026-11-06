@@ -126,3 +126,18 @@ ride verify --controller throttle-main --model-service model-main \
 源码入口：[命令](../../src/ride/__main__.py)、[类型映射](../../src/ride/registry.py)、
 [Ray 生命周期与探测](../../src/ride/runtime.py)、[验收契约](../reference/ACCEPTANCE_CONTRACT.md)。
 已有类型的操作步骤见 [CLI quickstart](CLI_QUICKSTART.md)。
+
+## Native model services
+
+`ride.model_services` entry points expose the same small `command(spec)` and
+`probe(spec)` contract for external native model packages. A model probe returns
+`model_ready`, with optional health/identity/status observations. RIDE retains
+Job ownership, state, resources, logs and lifecycle. Built-in vllm/mock-vllm
+behavior is unchanged; model packages own their configuration and public CLI.
+
+
+### Public SDK and external model plugins
+
+The `model_service_plugins` capability explicitly advertises support for `ride.model_services` entry points. A model consumer may require this capability before submitting an engine-specific type. The adapter provides `command(spec)` and `probe(spec)` returning `model_ready`; a running Job alone does not establish model readiness. Built-in vllm/mock-vllm remain compatible.
+
+Public SDK conditional start/stop applies to plugin models as well: use an operation ID and expected prior Job on start, and the exact owned Job on stop. An unknown submission outcome is not retried. No engine SDK is imported by `ride.sdk`.

@@ -80,8 +80,8 @@ def main(argv=None):
             if a.command=='start':
                 changes=json.loads(Path(a.config).read_text()) if a.config else {}
                 builtin='request-throttling' if kind=='controllers' else 'vllm'
-                from .registry import controller_adapter
-                if a.target==builtin or (kind=='model-services' and a.target=='mock-vllm') or (kind=='controllers' and controller_adapter(a.target) is not None):changes.setdefault('type',a.target)
+                from .registry import controller_adapter, model_service_adapter
+                if a.target==builtin or (kind=='model_services' and (a.target=='mock-vllm' or model_service_adapter(a.target) is not None)) or (kind=='controllers' and controller_adapter(a.target) is not None):changes.setdefault('type',a.target)
                 for field in ('backend','endpoint','model_service','model','executor','transport','port','num_cpus','num_gpus'):
                     value=getattr(a,field,None)
                     if value is not None:changes[field]=value

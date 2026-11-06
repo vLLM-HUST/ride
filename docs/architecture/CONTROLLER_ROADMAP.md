@@ -25,6 +25,8 @@
 | [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.4 a3a134d：Instance成员对象及原子条件动作、Job绑定与单向排空；45项Mac/Coder Linux及Linux CI通过；当前后端copy=false | 研究顺序第三项；本阶段保持原能力，真实KV与r19失败仍开放 |
 | ride-cooperative-controllers | 历史来源与集成证据 | 保留原件，不再添加正式策略；r19失败不重标 | 供迁移比对，不维持第二份开发计划 |
 | ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
+| gennova-d | GenNova 集成，复用公共 RIDE 与独立 Controller | 外部模型插件与公共 SDK 兼容验证 | 固定依赖升级及 GenNova Ray/NPU 资格仍未执行；项目任务在下游维护 |
+
 
 ## 里程碑与验收
 
