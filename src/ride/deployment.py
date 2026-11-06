@@ -142,7 +142,7 @@ class Deployment:
         except BaseException:
             self.journal.close()
             raise
-        self.run = run or (lambda args: subprocess.run(args, check=True))
+        self.run = run or (lambda args: subprocess.run(args, check=True, timeout=self.timeout))
         self.ray_factory = ray_factory
         self.management_factory = management_factory
         self.peer_factory = PeerClient
@@ -170,6 +170,10 @@ class Deployment:
         return self.ray_factory(self.plan['ray']['address'])
 
     def management(self):
+        if self.management_factory is RideClient:
+            # Management operations have a finite probe deadline. Inference
+            # clients and Controller business waits are outside this client.
+            return RideClient(self.plan['management']['endpoint'], timeout=min(self.timeout, 10))
         return self.management_factory(self.plan['management']['endpoint'])
 
     def wait(self, observe, expected, label):
@@ -310,9 +314,13 @@ class Deployment:
             raise RuntimeError('Management Job terminated; inspect logs and recover explicitly')
 
     def status(self):
-        observed = self.management().status()
-        if not self.verify_management(observed):
-            raise ValueError('Management identity unavailable')
+        try:
+            observed = self.management().status()
+        except (URLError, OSError) as error:
+            observed = {'observation_status': 'UNKNOWN', 'observation_error': type(error).__name__}
+        else:
+            if not self.verify_management(observed):
+                raise ValueError('Management identity unavailable')
         return dict(deployment=self.fingerprint, operations=self.journal.operations(),
                     management=observed)
 

@@ -249,6 +249,34 @@ class DeploymentTests(unittest.TestCase):
         item.close()
         self.assertEqual(self.ray.submitted, [])
 
+    def test_default_launcher_deadline_preserves_unknown_and_blocks_jobs(self):
+        import subprocess
+        from unittest.mock import patch
+        path = self.root / 'cluster.json'
+        path.write_text(json.dumps({'cluster_name': 'myc-test',
+            'provider': {'type': 'local', 'head_ip': 'head', 'worker_ips': []}}))
+        config = plan(); config['ray'].update(mode='bootstrap', cluster_config=str(path))
+        item = self.deployment(config)
+        # Exercise the actual default runner, not the injected fixture callback.
+        default = Deployment(config, self.root, ray_factory=lambda address: self.ray,
+                             management_factory=lambda address: self.management)
+        with patch('subprocess.run', side_effect=subprocess.TimeoutExpired('ray up', 1)) as command:
+            with self.assertRaises(subprocess.TimeoutExpired): default.up()
+            self.assertEqual(command.call_args.kwargs['timeout'], 1)
+        with self.assertRaises(UnknownOutcome): default.up()
+        default.close(); item.close()
+        self.assertEqual(self.ray.submitted, [])
+
+    def test_status_reports_durable_unknown_when_manager_is_unavailable(self):
+        item = self.deployment(); self.ray.fail = True
+        with self.assertRaises(OSError): item.up()
+        def unavailable():
+            raise ConnectionError('management is offline')
+        self.management.status = unavailable
+        observed = item.status(); item.close()
+        self.assertEqual(observed['management']['observation_status'], 'UNKNOWN')
+        self.assertIn({'operation_id': 'start-management', 'status': 'UNKNOWN'}, observed['operations'])
+
     def test_validation_before_effects(self):
         invalid = []
         for field, value in [('name', '../bad'), ('readiness_timeout_seconds', -1)]:
