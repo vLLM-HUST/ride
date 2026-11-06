@@ -12,6 +12,12 @@
 
 ## 2. 近期：完成最小可用控制面（参考 2–4 周）
 
+2026-11-06 用户新增优先项：先在 RIDE 实现指定机器的一键部署与托管，
+然后接入 gennova-d。Coder devbox 作为已交付机器，先两个 TP1 模型；
+复用 Ray 官方 launcher 启动一个共用集群，模型、CPU Controller 和管理服务
+均托管为独立 Ray Jobs。已有 Ray 模式保留。部署流程、失败与验收边界见
+[机器部署](guides/MACHINE_DEPLOYMENT.md)，实际进度见跨仓路线图。
+
 交付物：公共 RIDE SDK；独立 request-throttling-controller、kv-controller、instance-controller；统一插件入口、固定配置、身份、状态、日志和启停流程；一个已有 Ray 集群上的可复现示例。
 
 开发顺序：SDK和实例包的软件基础 → 独立KV包 → 既有请求实现公共契约接入 → 集成既有成功部署修复 → 标准云端部署 → 真实模型闭环。具体任务与软件/云端/硬件状态只在跨仓路线图勾选。

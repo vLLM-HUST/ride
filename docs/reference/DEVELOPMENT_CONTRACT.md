@@ -24,6 +24,12 @@ Controller type 与 instance 区分；停止 Controller 不得隐式停止外部
 
 ## 2. 环境与部署约束
 
+2026-11-06 用户批准新增“指定 devbox 作为机器”的部署模式：在已分配、
+归属已核实的 devbox 内，通过 Ray 官方 launcher 启动一个共用 Ray 集群。
+这明确覆盖本节旧有“仍使用已有标准 RayCluster 模板”对该模式的要求；
+不修改模板、平台网关、存储或 Kubernetes 对象。先做 RIDE，再接 GenNova。
+实际创建 devbox、设备唯一性、代码身份及收尾仍在各执行窗口事先冻结。
+
 平台、账号和具体权限以当前用户指令与冻结计划为准，不从共享默认登录态推断。旧9450条目是历史执行环境，不是后续项目的永久限制；各平台登录态保持独立。仍使用已有标准 RayCluster 模板。
 先查已有合适集群；没有时按明确授权，通过该模板创建一个共享工作区和 RayCluster。
 “新开 RayCluster”不得解释为绕过 Coder 直接创建 Kubernetes 对象。
