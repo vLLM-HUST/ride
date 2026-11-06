@@ -344,7 +344,7 @@ def main(argv=None):
             return
         deployment = Deployment(plan, args.directory)
         print(json.dumps(getattr(deployment, args.action)(), indent=2))
-    except (ValueError, KeyError, TypeError, OSError, RuntimeError) as error:
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError, subprocess.SubprocessError) as error:
         print(json.dumps({'status': 'FAIL', 'error': str(error), 'type': type(error).__name__}))
         raise SystemExit(1) from error
     finally:

@@ -96,6 +96,21 @@ file_mounts、setup_commands 和 Ray 启动命令。配置及依赖需固定，�
 Coder 的 SSH 代理、rsync、节点内部地址及工作区间连通性必须实际验证，不能因
 Coder terminal 可用就推断官方 launcher 可用。不适配时先修本入口，不用手工启动冒充一键成功。
 
+## 准备固定源码包
+
+运行全套 Linux 检查时不能只拷贝 tests：现有测试还依赖 scripts 和验收配置。
+使用完整提交导出，避免遗漏或混入未提交文件：
+
+```bash
+python scripts/prepare_machine_source.py /path/to/ride REVIEWED_COMMIT /new/payload
+```
+
+输出 repository/（完整已提交源码）和 source-manifest.json（提交及逐文件 SHA）。
+从该提交构建 wheel，将 wheel 和固定 Controller 依赖加入包，通过 Ray 的
+file_mounts 分发；在 setup_commands 安装，head_setup_commands 运行
+`python -m unittest discover -s /remote/payload/repository/tests`。
+软件前置失败应阻止 Ray/模型晋级，保留完整失败；不删失败项来让检查通过。
+
 ## 身份、重复执行和失败
 
 操作目录保存 SQLite Journal、管理配置和 readiness.json。配置与集群文件 SHA
