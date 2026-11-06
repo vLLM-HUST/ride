@@ -1,0 +1,451 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "RIDE可替换实例策略与统一控制循环",
+    "direction": "TB",
+    "theme": "light",
+    "background": "#ffffff",
+    "gap": 80
+  },
+  "groups": [
+    {
+      "id": "instance-core",
+      "label": "Instance Controller"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "title",
+      "label": "RFC-0001 · 可替换策略，共享实例控制契约",
+      "description": "目标、观测与优化方法随工作负载变化；安全执行与生命周期统一",
+      "position": {
+        "x": 80,
+        "y": 15
+      },
+      "size": {
+        "width": 980,
+        "height": 85
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "selection",
+      "label": "每个实例池显式选择一个策略；同一时刻只有一个策略提出容量目标",
+      "description": "草案：橙色强调本期在线策略，虚线框为后续策略",
+      "position": {
+        "x": 80,
+        "y": 105
+      },
+      "size": {
+        "width": 980,
+        "height": 55
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "online",
+      "label": "在线推理 · 首个实现",
+      "description": "时延与成本｜token / 队列 / KV",
+      "position": {
+        "x": 80,
+        "y": 190
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "sync-rollout",
+      "label": "同步 RL rollout · 后续",
+      "description": "本批完成时间｜剩余任务 / 长尾",
+      "position": {
+        "x": 420,
+        "y": 190
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#879083",
+        "font": "#525a50",
+        "rounded": false,
+        "dashed": true
+      }
+    },
+    {
+      "id": "async-rollout",
+      "label": "异步 RL rollout · 后续",
+      "description": "供需与版本滞后｜buffer / 消费率",
+      "position": {
+        "x": 760,
+        "y": 190
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#879083",
+        "font": "#525a50",
+        "rounded": false,
+        "dashed": true
+      }
+    },
+    {
+      "id": "strategy-contract",
+      "label": "公共策略契约 · 场景观测 → 容量建议",
+      "description": "声明目标、观测 schema、能力要求；策略不直接启停模型",
+      "position": {
+        "x": 80,
+        "y": 355
+      },
+      "size": {
+        "width": 980,
+        "height": 75
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "observation",
+      "label": "观测与能力校验",
+      "description": "身份 / 新鲜度 / 场景 schema",
+      "position": {
+        "x": 80,
+        "y": 525
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "instance-core"
+    },
+    {
+      "id": "guard",
+      "label": "公共安全约束",
+      "description": "归属 / 预算 / 排空 / 未知结果",
+      "position": {
+        "x": 420,
+        "y": 525
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "instance-core"
+    },
+    {
+      "id": "reconcile",
+      "label": "生命周期协调",
+      "description": "启动 / Ready / 停止 / 原操作回执",
+      "position": {
+        "x": 760,
+        "y": 525
+      },
+      "size": {
+        "width": 300,
+        "height": 110
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "instance-core"
+    },
+    {
+      "id": "adapters",
+      "label": "场景观察与约束适配器",
+      "description": "在线 Request / KV；RL 训练队列（规划）",
+      "position": {
+        "x": 80,
+        "y": 760
+      },
+      "size": {
+        "width": 300,
+        "height": 115
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "ride",
+      "label": "RIDE · 公共 SDK 与管理服务",
+      "description": "托管 Controller，管理准确模型 Job",
+      "position": {
+        "x": 420,
+        "y": 760
+      },
+      "size": {
+        "width": 300,
+        "height": 115
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "ray",
+      "label": "Ray · 分布式执行底座",
+      "description": "独立 Controller Jobs / 模型实例池",
+      "position": {
+        "x": 760,
+        "y": 760
+      },
+      "size": {
+        "width": 300,
+        "height": 115
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "scope",
+      "label": "设计示意，非完成声明。当前仅推进在线策略；RL 策略与适配器尚未实现。",
+      "description": "仅展示控制流；推理数据与 KV 字节不经过策略接口。",
+      "position": {
+        "x": 80,
+        "y": 985
+      },
+      "size": {
+        "width": 980,
+        "height": 65
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "online-implements",
+      "from": "online",
+      "to": "strategy-contract",
+      "label": "",
+      "kind": "dependency",
+      "style": {
+        "color": "#596153",
+        "dashed": true,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.153
+      }
+    },
+    {
+      "id": "sync-rollout-implements",
+      "from": "sync-rollout",
+      "to": "strategy-contract",
+      "label": "",
+      "kind": "dependency",
+      "style": {
+        "color": "#596153",
+        "dashed": true,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "async-rollout-implements",
+      "from": "async-rollout",
+      "to": "strategy-contract",
+      "label": "",
+      "kind": "dependency",
+      "style": {
+        "color": "#596153",
+        "dashed": true,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.847
+      }
+    },
+    {
+      "id": "provide-observation",
+      "from": "observation",
+      "to": "strategy-contract",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "north",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.153
+      }
+    },
+    {
+      "id": "capacity-recommendation",
+      "from": "strategy-contract",
+      "to": "guard",
+      "label": "容量建议",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "validated-observation",
+      "from": "observation",
+      "to": "guard",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "guarded-action",
+      "from": "guard",
+      "to": "reconcile",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "adapter-observation",
+      "from": "adapters",
+      "to": "observation",
+      "label": "只读观察与约束",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "north",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "manage-job",
+      "from": "reconcile",
+      "to": "ride",
+      "label": "经 SDK 管理",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.84
+      }
+    },
+    {
+      "id": "ray-execution",
+      "from": "ride",
+      "to": "ray",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "feedback",
+      "from": "ray",
+      "to": "adapters",
+      "label": "实际状态与执行回执",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "dashed": false,
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    }
+  ]
+}
