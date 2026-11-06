@@ -12,6 +12,13 @@
 
 效果目标：交付经过真实模型验证的组件，说明相对哪个基线、在哪个负载区间、改善哪项指标、增加什么代价、何时无收益。组件数、接口数、测试数和模型启动成功不能代替效果。
 
+2026-11-06 用户新增优先项：先在 RIDE 实现指定机器的一键部署与托管，
+然后接入 gennova-d。Coder devbox 作为已交付机器，先两个 TP1 模型；
+复用 Ray 官方 launcher 启动一个共用集群，模型、CPU Controller 和管理服务
+均托管为独立 Ray Jobs。已有 Ray 模式保留。部署流程、失败与验收边界见
+[机器部署](guides/MACHINE_DEPLOYMENT.md)，实际进度见跨仓路线图。
+
+交付物：公共 RIDE SDK；独立 request-throttling-controller、kv-controller、instance-controller；统一插件入口、固定配置、身份、状态、日志和启停流程；一个已有 Ray 集群上的可复现示例。
 研究目标：在已可靠运行的组件之间寻找可复现的冲突，研究状态与工作流信息能否改善跨模块决策。上游迁移和统一API不自动构成算法创新；不承诺正收益或论文录用。
 
 完整范围沿用[2026—2027飞书布局](https://ocnkis1vvvv6.feishu.cn/wiki/CuerwjP5jiy2yNkHYdgcjoC6nRc)：Request/Program、KV、资源与副本、引擎配置与prefill/decode组织、模型与LoRA、并行拓扑、工作流与SLO、跨模块协调。近期先完成Request＋KV＋资源，不能把近期路径当作永久缩减范围。
@@ -80,7 +87,7 @@
 
 顺序固定：问题与场景→上游版本/许可证/来源与差异→强基线→软件负例→真实小闭环→匹配发现→独立重复与留出→边界和归档。沿现有[效果契约](architecture/CONTROLLER_EVALUATION.md)与[控制面SOP](https://ocnkis1vvvv6.feishu.cn/docx/N9pzdG7d2ojuyAxV7jhcud8VnBg)执行。
 
-候选目标、指标选择与验收门槛见[固定规划快照的候选目标段](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/5ce1289a705aa25269f350c29151556fa0864d53/reports/ride-control-plane-20261106/source/docs/PROJECT_PLAN.md#4-每项研究统一怎么验收)。这些是预期目标，不是收益预测或已经冻结的所有组件通用门槛；首次正式对照前仍须冻结适用指标，执行后不降门槛。旧Request/B1独立标准不由本文覆盖。
+候选目标、指标选择与验收门槛见[固定规划快照的候选目标段](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/docs/PROJECT_PLAN.md#4-每项研究统一怎么验收)。这些是预期目标，不是收益预测或已经冻结的所有组件通用门槛；首次正式对照前仍须冻结适用指标，执行后不降门槛。旧Request/B1独立标准不由本文覆盖。
 
 至少三组新鲜交替配对，加未用于调参的留出输入；报告每组、波动与统计不确定性。三组只是最低起点，无法区分噪声则结论待定。实际输出及续轮输入工作量必须核验，固定max_tokens不代表同工作量；受控服务轨迹只证明该轨迹结论，最终还需完整多轮反馈验证。输出或质量变化不能静默忽略。
 

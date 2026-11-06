@@ -19,7 +19,7 @@
 
 | 项目 | 责任 | 本轮实际进度 | 下一项 |
 |---|---|---|---|
-| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.4 7551ee5：统一对象/版本/条件动作与持久回执，90项Mac及实际Coder Linux软件检查通过，新Linux CI通过；[草稿PR #2](https://github.com/vLLM-HUST/ride/pull/2)未合并，组织证据review开放 | 为Instance完成新版真实Ray/NPU资格；其余对象域暂不并行铺开 |
+| ride | 公共SDK、注册发现、模型/Controller生命周期与Ray执行 | SDK0.3.4 7551ee5：统一对象/版本/条件动作与持久回执，90项Mac及实际Coder Linux软件检查通过，新Linux CI通过；[PR #2](https://github.com/vLLM-HUST/ride/pull/2)已合入main；模型插件[PR #3](https://github.com/vLLM-HUST/ride/pull/3)亦已合并，机器部署见[PR #4](https://github.com/vLLM-HUST/ride/pull/4)，具体合并状态以PR回执为准 | 为Instance完成新版真实Ray/NPU资格；其余对象域暂不并行铺开 |
 | request-throttling-controller | 原有限流、多轮任务语义与请求排空 | 0.1.2 7ad7b12：Instance对象视图及版本化activate/drain/remove接公共SDK；107项Mac及Coder Linux通过、4可选跳过；原ThunderAgent核心不变；GitHub CI付款/额度导致未启动 | 本阶段作为共同配置，不改策略；SWE/B1暂停，非空Router恢复仍不支持 |
 | [instance-controller](https://github.com/yancanmao/instance-controller) | 副本策略与扩缩协调 | 0.1.6 08f85c0：实际控制循环使用版本动作、丢回复后查原回执、排空进展重新采样、接收方世代替换拒绝；43项Mac/Coder Linux及Linux CI通过，策略公式未改 | 唯一研究主线：容量/启动/工作量资格，再做成熟策略匹配对照 |
 | [kv-controller](https://github.com/yancanmao/kv-controller) | KV策略、后端能力与动作验证 | 0.1.4 a3a134d：Instance成员对象及原子条件动作、Job绑定与单向排空；45项Mac/Coder Linux及Linux CI通过；当前后端copy=false | 研究顺序第三项；本阶段保持原能力，真实KV与r19失败仍开放 |
@@ -27,8 +27,17 @@
 | ride-website | 解释架构与真实验收范围 | 本轮不发布 | 后续明确授权后，依据实际结果更新 |
 | gennova-d | GenNova 集成，复用公共 RIDE 与独立 Controller | 外部模型插件与公共 SDK 兼容验证 | 固定依赖升级及 GenNova Ray/NPU 资格仍未执行；项目任务在下游维护 |
 
-
 ## 里程碑与验收
+
+2026-11-06 新优先项（本对话）：机器部署基础底座，先 RIDE，后 GenNova。
+`codex/devbox-deployment` 独立 worktree 实现 `machines-*` 入口，复用官方 Ray
+launcher 与公开 SDK。30ec6a4 冷启动两个 devbox/两个 TP1 vLLM 与请求 Controller，
+3a4adde 管理重启入口保留模型和已有 program，合计 9 次真实生成；7 个 Job 与
+两个临时工作区已归档清理。两个 devbox 同物理宿主，性能未运行。
+历史 0.3.3 安全修复组合通过软件检查；本次合并候选包含 0.3.4 公共对象和模型插件，
+118 项软件及 CLI/构建检查通过，最新组合尚未重新上卡。见[验证清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/evidence/machine-deployment-20261106/summary.json)。
+GenNova 尚未消费该入口；单模型跨机器及跨物理主机另验。
+该项不改写下方已有 Controller 软件、功能和性能实验的状态。
 
 - [x] M0：独立仓库、公共RIDE开发范式、设计与架构图、中长期规划落盘。
 - [x] M1（软件）：轻量SDK、原子条件启动/停止、操作身份与未知不重投；必要既有部署修复合并，原工作树未覆盖。
@@ -43,7 +52,7 @@
 
 ## 历史验证证据与边界
 
-来源、逐轮原始结果摘要、失败及负结果已按组织规范迁存到[固定路线图快照](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/5ce1289a705aa25269f350c29151556fa0864d53/reports/ride-control-plane-20261106/source/docs/architecture/CONTROLLER_ROADMAP.md)。[迁存清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/5ce1289a705aa25269f350c29151556fa0864d53/reports/ride-control-plane-20261106/manifest.json)记录原提交、原路径与SHA256；SDK早期软件记录及来源清单见[同目录原件](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/5ce1289a705aa25269f350c29151556fa0864d53/reports/ride-control-plane-20261106/source/docs/evidence/)。原字节保留，活动任务仍只由本表维护。
+来源、逐轮原始结果摘要、失败及负结果已按组织规范迁存到[固定路线图快照](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/docs/architecture/CONTROLLER_ROADMAP.md)。[迁存清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/manifest.json)记录原提交、原路径与SHA256；SDK早期软件记录及来源清单见[同目录原件](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/docs/evidence/)。原字节保留，活动任务仍只由本表维护。
 
 旧r19主动复制失败仍开放，非空Router恢复、跨服务一致快照、多副本高可用、真实KV动作与完整收益验收未完成。历史功能和软件结果不能外推新组合的硬件或性能资格；历史失败不重标，网站未发布。未知归属的资源和其他研究聊天保持独立。
 
@@ -56,7 +65,7 @@
 - KV0.1.3：HTTP生命周期与copy/prepare绑定准确Job；排空单向转换、退役Job保护；可信COMPLETED旧记账恢复，UNKNOWN继续阻塞。
 - Request0.1.1：迟到激活不撤销排空，退役Job不复活，同Job重复移除幂等；原调度核心及无限业务等待不变。
 
-四仓固定源码前后逐文件SHA不变，本地标准检查通过：RIDE82、Instance39、KV43、Request105通过/4可选跳过；CLI/安装CLI/构建通过，跨包正常及丢回执协作通过。RIDE、Instance、KV新版Linux软件CI通过；Request新版CI因账户付款/额度未启动；组织数据review仍开放。最终源码与完整命令/日志存于私有`runtime/review-fixes-20261106-r1/final-software-receipt.json`，不发布原始环境。旧NPU0.3.2/0.1.3等结果不升级为新版本通过。该轮尚未实现通用对象schema及状态版本/CAS；后续软件进展见下。跨服务一致快照、真正UNKNOWN结果的外部核销、真实KV动作仍未完成；M5/M6硬件及收益边界保持。
+四仓固定源码前后逐文件SHA不变，本地标准检查通过：RIDE82、Instance39、KV43、Request105通过/4可选跳过；CLI/安装CLI/构建通过，跨包正常及丢回执协作通过。RIDE、Instance、KV新版Linux软件CI通过；Request新版CI因账户付款/额度未启动；该次执行时组织数据review仍开放，现有公开记录已按上方清单迁存benchmark。最终源码与完整命令/日志存于私有`runtime/review-fixes-20261106-r1/final-software-receipt.json`，不发布原始环境。旧NPU0.3.2/0.1.3等结果不升级为新版本通过。该轮尚未实现通用对象schema及状态版本/CAS；后续软件进展见下。跨服务一致快照、真正UNKNOWN结果的外部核销、真实KV动作仍未完成；M5/M6硬件及收益边界保持。
 
 ## 2026-11-06 公共对象与条件动作：Coder软件资格
 
@@ -64,4 +73,4 @@ RIDE0.3.4/Instance0.1.6/KV0.1.4/Request0.1.2已分别提交，固定源码在944
 
 本轮0NPU、0模型/业务请求，实际Coder软件通过不等于新版Ray/NPU模型资格。模板CANN PYTHONPATH注入和pip依赖警告保留；另以`python -I`核已安装SDK无CANN路径且不导入Ray/Torch/vLLM/FastAPI。SSH曾返回Exceeded MaxStartups后恢复；首次上传脚本在远端语法检查失败，已证明目标不存在后仅修传输脚本，输入包/产品源码/绝对截止不变；两个运维回归通过，旧失败不重标。
 
-43份原始回执逐文件SHA归档。临时工作区、Pod和专属PVC/PV已按精确ID确认全部删除，后备清理监控已退出；收尾回执见主计划与私有`runtime/state-contract-20261106-r1/`。下一项先在现有成功部署入口验新版独立Ray Jobs和真实扩缩/故障链，再补RuntimeState/ResourceBinding等确有使用者的对象视图；真实KV复制、外部UNKNOWN核销、跨服务一致快照、多副本高可用和收益对照仍开放。网站未发布、PR未合并。
+43份原始回执逐文件SHA归档。临时工作区、Pod和专属PVC/PV已按精确ID确认全部删除，后备清理监控已退出；收尾回执见主计划与私有`runtime/state-contract-20261106-r1/`。下一项先在现有成功部署入口验新版独立Ray Jobs和真实扩缩/故障链，再补RuntimeState/ResourceBinding等确有使用者的对象视图；真实KV复制、外部UNKNOWN核销、跨服务一致快照、多副本高可用和收益对照仍开放。该次执行时网站未发布、PR未合并；当前合并状态见本表PR链接。

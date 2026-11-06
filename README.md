@@ -35,6 +35,11 @@ CPU/CI 和 payload 检查不冒充实际 NPU 端到端证据。
 
 安装部署见 [复用已有 RayCluster 的安装与部署脚本](docs/guides/INSTALL_AND_DEPLOY.md)。
 
+[指定机器一键部署](docs/guides/MACHINE_DEPLOYMENT.md)复用 Ray 官方 on-premise
+launcher，再托管管理服务、模型和 Controller。固定提交已完成双 devbox、双
+TP1 的 9 次真实生成、管理接管和停止隔离；最新 0.3.3 集成通过 103 项软件检查，
+尚未重跑 NPU。两个 devbox 同属一台物理主机，不代表跨物理主机或性能验收。
+
 Current deployment authority: [existing-Ray deployment policy](docs/reference/DEPLOYMENT_POLICY.md).
 CPU tests are prerequisites; complete acceptance requires real NPU/model/control actions.
 
