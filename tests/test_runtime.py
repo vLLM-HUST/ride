@@ -16,7 +16,7 @@ class Tests(unittest.TestCase):
             c=Client();config={"state_file":str(Path(directory)/"state.json"),"workspace":"test","controllers":[{"id":"request-throttling","entrypoint":"request-throttling","backend":"http://127.0.0.1:8000","endpoint":"http://127.0.0.1:9000"}]}
             r=Runtime(config,c);a=r.start("request-throttling");r.start("request-throttling")
             self.assertEqual(len(c.submitted),1)
-            restored=Runtime(config,c);restored.stop("request-throttling")
+            r.close();restored=Runtime(config,c);restored.stop("request-throttling")
             self.assertEqual(c.stopped,[a["job_id"]])
             with self.assertRaises(ValueError):restored.stop("someone-else")
 if __name__=="__main__":unittest.main()

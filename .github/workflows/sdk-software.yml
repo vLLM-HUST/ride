@@ -1,0 +1,26 @@
+name: Independent Controller SDK software
+on:
+  pull_request:
+  push:
+    branches: [codex/independent-controller-sdk]
+permissions:
+  contents: read
+jobs:
+  software:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e '.[test]'
+      - run: python tools/check.py --output-dir results/sdk-software
+        env:
+          PYTHONPATH: src
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sdk-software
+          path: results/sdk-software
+      - name: Verify lightweight SDK
+        run: python -c 'import ride.sdk,sys; assert not any(n in sys.modules for n in ("ray","torch","vllm","fastapi"))'

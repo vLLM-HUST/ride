@@ -2,6 +2,7 @@
 import concurrent.futures
 import hashlib
 import json
+import math
 import threading
 import time
 from urllib.request import Request, urlopen
@@ -111,23 +112,55 @@ def programs(plan, target, record):
 
 def adoption(plan, client, wait):
     from ride.__main__ import request
+    output=Path(plan['deployment_output'])
+    intent=output/'adoption-submission.json'
+    stop_intent=output/'management-stop-intent.json'
+    if intent.exists() or stop_intent.exists():
+        raise RuntimeError('Adoption intent exists; inspect original Jobs instead of resubmitting')
+    restart_delay=plan.get('management_restart_delay_seconds',0)
+    if type(restart_delay) not in (int,float) or not math.isfinite(restart_delay) or not 0<=restart_delay<=30:
+        raise ValueError('Management restart delay must be finite and between 0 and 30 seconds')
     before=request(plan['address'],'status')
-    receipt=json.loads((Path(plan['deployment_output'])/'management-submission.json').read_text())
+    for kind in ('controllers','model_services'):
+        for row in before[kind]:
+            if row['job_status']=='RUNNING':assert row['ready'] is True,'Unready adoption baseline'
+            else:assert row['job_status'] in ('STOPPED','SUCCEEDED','FAILED','NOT_STARTED'),'Unknown adoption baseline'
+    receipt=json.loads((output/'management-submission.json').read_text())
     identifier=receipt['job_id'];info=client.call('/api/jobs/'+identifier)
     assert info['entrypoint']==receipt['entrypoint'],'Management ownership mismatch'
+    assert info.get('status')=='RUNNING','Management Job must be running before adoption'
+    assert plan['management_job_id']==identifier,'Management binding differs from submission receipt'
+    new=identifier+'-adopt'
+    if plan.get('adoption_job_id',new)!=new:raise ValueError('Frozen adoption Job identity differs')
+    stop_intent.write_text(json.dumps({'job_id':identifier,'entrypoint':receipt['entrypoint']}))
     response=client.call('/api/jobs/'+identifier+'/stop',{})
     deadline=time.monotonic()+60
     while client.call('/api/jobs/'+identifier)['status'] not in ('STOPPED','FAILED','SUCCEEDED'):
         if time.monotonic()>deadline:raise TimeoutError('Management stop timeout')
         time.sleep(1)
-    new=identifier+'-adopt'
-    intent=Path(plan['deployment_output'])/'adoption-submission.json'
-    if intent.exists():raise RuntimeError('Adoption intent exists; inspect instead of duplicate submission')
+    if restart_delay:time.sleep(restart_delay)
     intent.write_text(json.dumps({'job_id':new,'entrypoint':receipt['entrypoint']}))
     client.submit_job(submission_id=new,entrypoint=receipt['entrypoint'],runtime_env=plan['runtime_env'],entrypoint_num_cpus=.1,entrypoint_resources=plan.get('management_resources',{}))
+    # Execution binding only: the frozen input file remains unchanged. The
+    # readiness guard must inspect the replacement, not the intentionally stopped Job.
+    plan['management_job_id']=new
     after=wait('status')
-    assert after['management_pid']!=before['management_pid'] and after['run_id']==before['run_id']
-    for kind in ('controllers','model_services'):
-        assert [(x['id'],x['job_id']) for x in after[kind]]==[(x['id'],x['job_id']) for x in before[kind]]
-        assert all(x['ready'] for x in after[kind]),after
+    deadline=time.monotonic()+plan.get('timeout',180)
+    while True:
+        assert after['management_pid']!=before['management_pid'] and after['run_id']==before['run_id']
+        ready=True
+        for kind in ('controllers','model_services'):
+            previous={row['id']:row for row in before[kind]}
+            current={row['id']:row for row in after[kind]}
+            assert len(current)==len(after[kind]) and current.keys()==previous.keys(),'Instance set changed during adoption'
+            assert all(current[name]['job_id']==row['job_id'] for name,row in previous.items()),'Instance Job identity changed during adoption'
+            for name,row in previous.items():
+                status=current[name]['job_status']
+                if status=='UNKNOWN':ready=False;continue
+                assert status==row['job_status'],'Instance Job status changed during adoption'
+                if status=='RUNNING':ready=ready and current[name]['ready'] is True
+        if ready:break
+        if time.monotonic()>=deadline:raise TimeoutError('Controller readiness did not recover after management adoption')
+        time.sleep(.5)
+        after=request(plan['address'],'status')
     return {'before':before,'after':after,'stop_response':response,'management_job':new}

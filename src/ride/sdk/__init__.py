@@ -11,3 +11,9 @@ class ControllerAdapter(Protocol):
     def probe(spec: dict) -> dict: ...
 
 __all__=['ApiError','PeerClient','RideClient','PROTOCOL_VERSION','ControllerAdapter','Journal','UnknownOutcome','PythonControllerAdapter','load_configuration']
+
+from .objects import ActionConflict, object_reference, validate_snapshot, validate_action, make_action, verify_action_result
+__all__ += ['ActionConflict','object_reference','validate_snapshot','validate_action','make_action','verify_action_result']
+
+from .client import StateClient
+__all__ += ['StateClient']

@@ -46,7 +46,9 @@ class ResourceClient:
     def start(self,name,spec,*,operation_id,expected_job_id):
         if not isinstance(operation_id,str) or not 0<len(operation_id)<=256:raise ValueError('Operation identity required')
         if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id):raise ValueError('Prior Job identity required')
-        self.client.require_capabilities('conditional_start')
+        required=['conditional_start']
+        if isinstance(spec,dict) and 'start_not_after' in spec:required.append('start_deadline')
+        self.client.require_capabilities(*required)
         return self.client.post(self.path(name)+'/start',dict(spec=spec,operation_id=operation_id,expected_job_id=expected_job_id))
     def stop(self,name,*,expected_job_id):
         if not isinstance(expected_job_id,str) or not expected_job_id:raise ValueError('Exact Job identity required')
@@ -63,3 +65,19 @@ class RideClient(PeerClient):
         if capabilities.get('protocol_version')!=PROTOCOL_VERSION:raise ValueError('Incompatible RIDE protocol version')
         if any(capabilities.get(name) is not True for name in names):raise ValueError('RIDE capability missing: '+', '.join(names))
     def operation(self,operation_id):return self.get('/api/v1/operations/'+quote(operation_id,safe=''))
+
+class StateClient:
+    """Local replica-state actions; external model/transfer effects use their own APIs."""
+    def __init__(self,peer):self.peer=peer
+    def observe_instance(self,name):
+        from .objects import validate_snapshot
+        result=validate_snapshot(self.peer.get('/control/replicas/'+quote(name,safe='')))
+        if result['object']['kind']!='Instance' or result['object']['name']!=name:
+            raise ValueError('Observed instance identity conflict')
+        return result
+    def apply(self,request):
+        from .objects import validate_action,verify_action_result
+        validate_action(request)
+        return verify_action_result(request,self.peer.post('/control/action',request))
+    def result(self,operation_id):
+        return self.peer.get('/control/actions/'+quote(operation_id,safe=''))

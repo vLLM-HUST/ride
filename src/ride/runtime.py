@@ -5,6 +5,9 @@ import json
 import re
 import threading
 import uuid
+import fcntl
+import tempfile
+import weakref
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
@@ -16,11 +19,33 @@ class Runtime:
     def __init__(self, config, client=None):
         self.config = copy.deepcopy(config)
         self.lock = threading.RLock()
-        self.path = Path(config['state_file'])
+        self.path = Path(config['state_file']).resolve()
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._closed = False
+        state_lock = self.path.with_name(self.path.name + '.lock').open('a')
+        try:
+            fcntl.flock(state_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            state_lock.close()
+            raise RuntimeError('Management state already has a writer; state file locked') from error
+        self._release_state_lock = weakref.finalize(self, state_lock.close)
+        try:
+            self._initialize(config, client)
+        except BaseException:
+            self.close()
+            raise
+
+    def _initialize(self, config, client):
+        self.executor = config.get('deployment', 'ray')
+        if self.executor not in ('ray', 'local'):
+            raise ValueError('Unsupported process executor')
         if client is None:
-            from ray.job_submission import JobSubmissionClient
-            client = JobSubmissionClient(config['ray_address'])
+            if self.executor == 'local':
+                from .local_process import LocalProcessClient
+                client = LocalProcessClient(self.path.parent / (self.path.stem + '-processes'))
+            else:
+                from ray.job_submission import JobSubmissionClient
+                client = JobSubmissionClient(config['ray_address'])
         self.client = client
         self.state = json.loads(self.path.read_text()) if self.path.exists() else {'run_id': uuid.uuid4().hex, 'jobs': {}, 'operations': []}
         self.state.setdefault('specs', {'controllers': {}, 'model_services': {}})
@@ -33,10 +58,32 @@ class Runtime:
                 self.state['specs'][kind].setdefault(spec['id'], copy.deepcopy(spec))
         self.save()
 
+    def close(self):
+        """Release management ownership only; running Jobs remain untouched."""
+        with self.lock:
+            self._closed = True
+            self._release_state_lock()
+
+    def _ensure_open(self):
+        if self._closed:
+            raise RuntimeError('Management state writer is closed')
+
     def save(self):
-        temporary = self.path.with_suffix('.tmp')
-        temporary.write_text(json.dumps(self.state, indent=2))
-        temporary.replace(self.path)
+        self._ensure_open()
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(mode='w', dir=self.path.parent,
+                    prefix=self.path.name + '.', delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(self.state, stream, indent=2)
+                stream.flush()
+                os.fsync(stream.fileno())
+            temporary.replace(self.path)
+            descriptor = os.open(self.path.parent, os.O_RDONLY)
+            try:os.fsync(descriptor)
+            finally:os.close(descriptor)
+        finally:
+            if temporary is not None:temporary.unlink(missing_ok=True)
 
     def operation(self, action, target, result):
         self.state['operations'].append({'at': datetime.now(timezone.utc).isoformat(), 'action': action, 'target': target, 'result': result})
@@ -60,6 +107,7 @@ class Runtime:
             requested=json.dumps(dict(kind=kind,identifier=identifier,changes=changes,
                 expected_job_id=expected_job_id),sort_keys=True,separators=(',',':'),allow_nan=False)
         with self.lock:
+            self._ensure_open()
             key=self.key(kind,identifier)
             if conditional:
                 previous=self.state['start_operations'].get(operation_id)
@@ -75,8 +123,26 @@ class Runtime:
             spec = copy.deepcopy(old or {'id': identifier})
             spec.update(changes or {})
             spec['id'] = identifier
-            if spec.get('executor', 'ray') != 'ray':
-                raise ValueError('Only Ray execution is implemented')
+            start_deadline = None
+            if 'start_not_after' in spec:
+                value = spec['start_not_after']
+                try:
+                    if not isinstance(value,str):raise ValueError()
+                    start_deadline = datetime.fromisoformat(value.replace('Z','+00:00'))
+                    if start_deadline.utcoffset() is None:raise ValueError()
+                except ValueError:raise ValueError('Timezone-aware model start deadline required')
+            prefix = spec.get('job_name_prefix')
+            if 'job_name_prefix' in spec and (not isinstance(prefix, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}', prefix)):
+                raise ValueError('Invalid Ray Job name prefix')
+            if spec.get('executor', self.executor) != self.executor:
+                raise ValueError('Instance executor must match management deployment')
+            if self.executor == 'local':
+                if kind != 'controllers':
+                    raise ValueError('Local execution supports Controller only; model lifecycle stays external')
+                if spec.get('resources') or spec.get('num_gpus', 0) or spec.get('num_cpus', 0):
+                    raise ValueError('Local Controller resources are provided by the devbox, not Ray reservations')
+                if set(spec.get('runtime_env', {})) - {'env_vars'}:
+                    raise ValueError('Local runtime_env supports env_vars only')
             if old and changes and spec != old:
                 raise ValueError('Instance configuration conflict; use a different instance name')
             cmd = command(kind, spec)
@@ -98,9 +164,13 @@ class Runtime:
                     raise ValueError('Dependent model service is not Ready')
                 if spec['backend'] != model['endpoint']:
                     raise ValueError('Controller backend does not match model service')
+            if start_deadline is not None and datetime.now(timezone.utc) >= start_deadline:
+                raise ValueError('Model start deadline expired; no new Job submitted')
             self.state['specs'][kind][identifier] = spec
             workspace = re.sub(r'[^a-zA-Z0-9_.-]', '-', str(self.config.get('workspace','workspace')))[:40]
             job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + workspace + '-' + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
+            if prefix:
+                job_id = prefix + '-' + uuid.uuid4().hex[:12]
             self.state['jobs'][key] = job_id
             self.state['submitted_specs'][key] = copy.deepcopy(spec)
             if conditional:
@@ -127,17 +197,18 @@ class Runtime:
     def start_model_service(self, identifier): return self.start_instance('model_services', identifier)
     def stop_model_service(self, identifier): return self.stop_instance('model_services', identifier)
 
-    def stop(self, identifier, *, expected_job_id=None):
+    def stop(self, identifier, *, expected_job_id=_UNCONDITIONAL):
         with self.lock:
+            self._ensure_open()
             job_id = self.state['jobs'].get(identifier)
             if not job_id: raise ValueError('No owned job for instance')
-            if expected_job_id is not None and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
+            if expected_job_id is not _UNCONDITIONAL and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
                 raise ValueError('Stop precondition Job identity changed')
             result = self.client.stop_job(job_id)
             self.operation('stop', identifier, str(result))
             return {'job_id': job_id, 'stop_requested': result}
 
-    def stop_instance(self, kind, identifier, *, expected_job_id=None):
+    def stop_instance(self, kind, identifier, *, expected_job_id=_UNCONDITIONAL):
         return self.stop(self.key(kind, identifier),expected_job_id=expected_job_id)
 
     def describe_operation(self, identifier):
@@ -167,7 +238,7 @@ class Runtime:
             if not spec: raise ValueError('Unknown instance')
             job_id = self.state['jobs'].get(self.key(kind, identifier))
         record = {'id': identifier, 'type': spec.get('type', spec.get('entrypoint')), 'kind': kind,
-            'endpoint': spec['endpoint'], 'job_id': job_id, 'job_status': 'NOT_STARTED', 'ready': False}
+            'executor': self.executor, 'endpoint': spec['endpoint'], 'job_id': job_id, 'job_status': 'NOT_STARTED', 'ready': False}
         if job_id:
             try: record['job_status'] = self.client.get_job_status(job_id).value
             except Exception as error: record['job_status'] = 'UNKNOWN'; record['job_error'] = type(error).__name__
@@ -210,9 +281,8 @@ class Runtime:
                 except Exception as error: record['probe_error'] = type(error).__name__
         return record
 
-    @staticmethod
-    def capabilities():
-        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'model_service_plugins':True,'inspect':True,'start_controller':True,'start_model_service':True,'mutate':True}
+    def capabilities(self):
+        return {'protocol_version':'1','conditional_start':True,'conditional_stop':True,'single_writer':True,'start_deadline':True,'model_service_plugins':True,'inspect':True,'start_controller':True,'start_model_service':self.executor != 'local','mutate':True}
 
     def snapshot(self):
         with self.lock:

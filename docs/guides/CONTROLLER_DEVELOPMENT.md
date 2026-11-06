@@ -4,7 +4,7 @@
 
 目标是让开发者实现自己的 Controller，然后用统一命令将独立进程部署到已有 Ray。
 RIDE 是控制平面；Controller 是策略与服务实现；Ray 是进程执行底座。
-本指南区分当前已实现接口与未来扩展约定，不把约定当成已有插件能力。
+本指南对应SDK 0.3.2、协议版本1。接口说明见[公共SDK](SDK.md)，当前实机及未验收范围见[跨仓库路线图](../architecture/CONTROLLER_ROADMAP.md)。不把协议版本、插件发现或健康检查当作策略正确性证明。
 
 ## 1. 系统责任与运行路径
 
@@ -37,18 +37,18 @@ python -m your_controller --backend http://model-host:8000 --listen 0.0.0.0:9011
 进程日志写到标准输出与标准错误，才能通过 `ride logs` 获取。
 后台线程和连接应随进程退出释放；当前 `ride stop` 是 Ray Job 停止，不承诺 graceful drain。
 
-当前 Request Throttling 的 RIDE 适配要求如下：
+新的独立Controller优先使用公共`ride.sdk.PythonControllerAdapter`，提供下列进程接口：
 
 | 接口 | 当前读取方式与用途 |
 |---|---|
-| `GET /health` | HTTP 200，JSON 健康信息；后端 `/health` 也必须可达 |
-| `GET /migration-identity` | JSON；`backends` 必须等于配置后端列表，`scheduling_enabled` 必须为 true |
-| `GET /programs` | JSON，展示 Controller 的 program 状态 |
+| `GET /health` | HTTP 200且JSON `status=ok`；Controller自己定义是否已具备服务条件 |
+| `GET /identity` | JSON包含`id`、`role`、`configuration_sha256`、`protocol_version`；公共适配器按冻结配置逐项核验 |
+| `GET /status` | JSON，返回本Controller可观察的状态；字段由公开API约定，不伪造其他策略的状态 |
 | 标准输出 / 标准错误 | Ray Job 日志 |
 
-这三个 HTTP 接口目前写在 `Runtime.describe` 中，**是 Request Throttling 专用探测**。
-未来 Controller 不能为了接入而伪造 `programs` 或 `scheduling_enabled`。
-必须为自己的类型增加适配器与对应探测逻辑，再接入 RIDE；通用 Controller SDK、自动插件发现尚未实现。
+配置采用`ride.controller/v1`，使用绝对配置路径、配置SHA和独立状态文件。适配器构造命令前检查配置与实例id/endpoint一致；运行进程再次核配置SHA。公共适配器的探测有独立2秒运维期限，不把它用于业务请求。它不校验算法效果，也不自动保证源码版本；来源文件、实际加载实现及SHA仍需验收。
+
+内置旧`request-throttling`类型保留`/migration-identity`、`/programs`专用探测，属于兼容入口。新`request-throttling-managed`、`kv-control`、`instance-scaling`使用公共适配器，独立安装、独立发布；其他Controller无需伪造`programs`或`scheduling_enabled`。
 健康、进程运行与策略有效是三个不同结论：健康检查不能证明策略正确或性能收益。
 
 ## 3. 接入 RIDE：独立包注册适配器
@@ -63,11 +63,22 @@ demo = "ride_controller_demo.adapter:Adapter"
 
 适配器提供两个静态方法：`command(spec) -> str` 校验配置并构造进程命令，
 `probe(spec) -> dict` 返回 `controller_ready` 布尔值及可选 health/identity/status。
+遵循上述公共协议时，可直接继承共享适配器；策略及进程实现仍在自己的包中：
+
+```python
+from ride.sdk import PythonControllerAdapter
+
+class Adapter(PythonControllerAdapter):
+    module = "your_controller"  # 本包的 python -m 入口
+    role = "your-role"          # 与本包冻结配置的role一致
+```
+
+进程入口接受`--configuration`和`--configuration-sha256`，通过`load_configuration`读取；该函数只验证配置，不启动服务。`RideClient`用于模型管理，`PeerClient`用于其他Controller公开API；禁止import其他策略包的内部实现。实际独立包示例：`instance_controller.adapter`、`kv_controller.adapter`。
 Ray 生命周期、Job ID、日志和持久化由 RIDE 统一管理；新类型不修改这些核心代码。
 管理环境和执行节点均需安装包；安装后重启管理进程以使用更新版本。
 重复注册同名类型会拒绝；内置 request-throttling 类型保留现有兼容路径，不允许覆盖。
 当前通用 CLI 提供 endpoint/port/runtime-env/resources 等配置；新增专用参数可通过
-JSON `--config` 传递。当前没有通用 Controller 策略 SDK、版本协商和插件隔离。
+JSON `--config` 传递。公共SDK已提供配置、适配器、客户端和独立SQLite Journal；客户端核协议和服务端能力，不静默降级。它不提供通用策略算法、跨管理副本一致性或插件进程的安全隔离；第三方插件须按部署环境的信任边界安装。
 
 接入完成后的统一命令形式：
 
@@ -83,6 +94,7 @@ ride start controller <实例名称>
 
 类型描述实现，名称描述运行实例。同名配置冲突会拒绝，修改配置需使用新实例名。
 Controller 包必须可从 Ray 执行环境导入；可预装到执行节点，或提供 `--runtime-env`。
+管理环境与执行环境使用同一冻结版本；配置文件在两端路径和SHA必须一致。若使用部署payload，沿[标准安装部署入口](INSTALL_AND_DEPLOY.md)传送和读回，不以本机import通过代替实际镜像检查。
 用 `--num-cpus`、`--num-gpus`、`--resources` 明确声明资源。
 服务 endpoint 必须对应实际执行节点和监听端口；当前 RIDE 不自动分配端口或提供负载均衡。
 不同节点之间不能用 localhost 作为彼此的服务地址。
