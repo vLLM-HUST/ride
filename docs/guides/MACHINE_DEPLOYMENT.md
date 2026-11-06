@@ -62,6 +62,23 @@ Controller spec 原样交给已安装插件；独立请求 Controller 的配置�
 管理 Job 必须固定节点，state_file 的父目录在该节点上预先存在且可持久写入。
 readiness_timeout_seconds 只控制运维就绪等待，不是推理业务 timeout。
 
+对于新版独立请求包，使用其 `request-throttling-managed` 类型，并在 spec 指定
+`configuration`（所有执行节点及管理节点上相同的绝对路径）和
+`configuration_sha256`。按请求包的 `ride.controller/v1` 配置声明允许的模型池。
+固定副本部署还需声明模型池激活，例如 plan 顶层增加：
+
+```json
+{"model_bindings": [{"controller": "throttle-a", "model_services": ["model-a"],
+                      "token_env": "RIDE_CONTROLLER_TOKEN"}]}
+```
+
+入口先检查操作环境的 token 变量存在，再启动服务；全部服务就绪后，通过公开
+`/control/capabilities` 协商预声明模型池能力，并调用 `/control/activate`。
+只激活本次已启动、Ready 且 Job ID 精确匹配的模型，核对 activated/replica/job_id
+回执；UNKNOWN 不自动重放。token 值不写进命令行；Controller 环境需使用同一凭据。
+这只连接用户明确指定的固定模型池，不实现调度算法或扩缩决策。
+固定副本模式的模型由部署器拥有；不能再启动另一个实例 Controller 接管同一批模型。
+
 bootstrap 模式将 ray 改为：
 
 ```json

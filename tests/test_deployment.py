@@ -226,6 +226,35 @@ class DeploymentTests(unittest.TestCase):
             with self.subTest(config=config), self.assertRaises(ValueError):
                 validate_plan(config)
 
+    def test_explicit_model_binding_uses_public_peer_api_once(self):
+        from unittest.mock import patch
+        config = plan()
+        config['model_bindings'] = [{'controller': 'controller-a', 'model_services': ['model-a'],
+                                     'token_env': 'TEST_BINDING_TOKEN'}]
+        calls = []
+        class Peer:
+            def get(self, path):
+                return {'protocol_version': '1', 'predeclared_pool_membership': True}
+            def post(self, path, body):
+                calls.append((path, body))
+                return dict(body, activated=True)
+        with patch.dict('os.environ', TEST_BINDING_TOKEN='fixture-peer-token'):
+            item = self.deployment(config)
+            item.peer_factory = lambda *args, **kwargs: Peer()
+            item.up(); item.up(); item.close()
+        self.assertEqual(calls, [('/control/activate', {'replica': 'model-a',
+                            'job_id': 'models-model-a', 'endpoint': 'http://worker:8000'})])
+
+    def test_missing_binding_credentials_blocks_all_remote_effects(self):
+        config = plan()
+        config['model_bindings'] = [{'controller': 'controller-a', 'model_services': ['model-a'],
+                                     'token_env': 'MISSING_DEPLOYMENT_TOKEN'}]
+        item = self.deployment(config)
+        with self.assertRaisesRegex(ValueError, 'token'):
+            item.up()
+        item.close()
+        self.assertEqual(self.ray.submitted, [])
+
     def test_public_sdk_real_http_and_runtime_keep_model_job_identity(self):
         import threading
         from http.server import ThreadingHTTPServer

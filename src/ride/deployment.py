@@ -11,6 +11,7 @@ import fcntl
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import shlex
@@ -19,7 +20,7 @@ import time
 from urllib.error import URLError
 from urllib.parse import urlsplit
 
-from .sdk import Journal, RideClient, UnknownOutcome
+from .sdk import Journal, PeerClient, RideClient, UnknownOutcome
 from .sdk.journal import canonical
 
 
@@ -88,6 +89,16 @@ def validate_plan(plan):
                     raise ValueError('Controller model dependency and backend must match')
     if not models:
         raise ValueError('At least one explicit model service required')
+    controllers = {spec['id'] for spec in plan.get('controllers', [])}
+    bound = set()
+    for binding in plan.get('model_bindings', []):
+        name = binding.get('controller')
+        members = binding.get('model_services')
+        if (name not in controllers or name in bound or not isinstance(members, list) or not members
+                or any(member not in models for member in members) or len(set(members)) != len(members)
+                or not re.fullmatch(r'[A-Za-z_][A-Za-z0-9_]*', binding.get('token_env', ''))):
+            raise ValueError('Explicit unique Controller/model binding and token environment name required')
+        bound.add(name)
     if ray['mode'] == 'bootstrap':
         config = Path(ray['cluster_config'])
         if not config.is_absolute():
@@ -132,6 +143,7 @@ class Deployment:
         self.run = run or (lambda args: subprocess.run(args, check=True))
         self.ray_factory = ray_factory
         self.management_factory = management_factory
+        self.peer_factory = PeerClient
         self.timeout = self.plan.get('readiness_timeout_seconds', 600)
 
     def close(self):
@@ -203,6 +215,9 @@ class Deployment:
 
     def up(self):
         with self.locked():
+            for binding in self.plan.get('model_bindings', []):
+                if not os.environ.get(binding['token_env']):
+                    raise ValueError('Missing peer token environment: ' + binding['token_env'])
             if self.journal.snapshot().get('stopping'):
                 raise ValueError('Deployment is stopping or stopped; use a new deployment directory')
             if self.plan['ray']['mode'] == 'bootstrap':
@@ -234,11 +249,35 @@ class Deployment:
                             raise ValueError('Service Job identity conflict')
                         return observed.get('ready') is True and observed.get('job_id') == started['job_id']
                     self.wait(lambda: api.describe(spec['id']), ready, kind + '/' + spec['id'])
+            self.activate_bindings(client)
             result = dict(status='PASS', scope='deployment readiness only',
                           model_request='NOT_RUN', controller_action='NOT_RUN', performance='NOT_RUN',
                           endpoint=self.plan['management']['endpoint'], deployment=self.fingerprint)
             (self.root / 'readiness.json').write_text(json.dumps(result, indent=2) + '\n')
             return result
+
+    def activate_bindings(self, client):
+        models = {spec['id']: spec for spec in self.plan['model_services']}
+        controllers = {spec['id']: spec for spec in self.plan.get('controllers', [])}
+        for binding in self.plan.get('model_bindings', []):
+            peer = self.peer_factory(controllers[binding['controller']]['endpoint'],
+                                     token=os.environ[binding['token_env']], timeout=10)
+            capabilities = peer.get('/control/capabilities')
+            if capabilities.get('protocol_version') != '1' or capabilities.get('predeclared_pool_membership') is not True:
+                raise ValueError('Controller does not support predeclared model membership')
+            for name in binding['model_services']:
+                record = client.models.describe(name)
+                start = self.journal.execute('start-model_services-' + name, models[name], lambda: None)
+                if record.get('ready') is not True or record.get('job_id') != start['job_id']:
+                    raise ValueError('Model binding requires Ready exact owned Job identity')
+                body = dict(replica=name, job_id=start['job_id'], endpoint=models[name]['endpoint'])
+                def activate(body=body, peer=peer):
+                    result = peer.post('/control/activate', body)
+                    if (result.get('activated') is not True or result.get('replica') != body['replica']
+                            or result.get('job_id') != body['job_id']):
+                        raise ValueError('Controller membership acknowledgement differs')
+                    return result
+                self.journal.execute('bind-' + binding['controller'] + '-' + name, body, activate)
 
     def _bootstrap(self, args):
         self.run(args)
