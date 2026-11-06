@@ -68,7 +68,7 @@
     {
       "id": "observe",
       "label": "① Observe · 观测",
-      "description": "每隔 Δt 采样一次，形成同一池快照",
+      "description": "先明确指标口径，再按周期采样",
       "position": {
         "x": 60,
         "y": 235
@@ -87,8 +87,8 @@
     },
     {
       "id": "sample",
-      "label": "采集实例与请求指标",
-      "description": "队列 / KV / 输入预算 / TTFT",
+      "label": "按决策问题选择指标",
+      "description": "需求 / 排队 / 阶段时延 / 状态压力",
       "position": {
         "x": 60,
         "y": 350
@@ -107,8 +107,8 @@
     },
     {
       "id": "validate",
-      "label": "校验身份与数据质量",
-      "description": "实例 Job、时间戳、缺失与过期",
+      "label": "验证指标语义与数据质量",
+      "description": "Job / 来源 / 单位 / 窗口 / 新鲜度",
       "position": {
         "x": 60,
         "y": 480
@@ -127,8 +127,8 @@
     },
     {
       "id": "snapshot",
-      "label": "输出：有效指标快照",
-      "description": "各实例负载 + 请求阶段 + 当前规模",
+      "label": "输出：带口径的有效快照",
+      "description": "保留分布与覆盖量；缺测不填 0",
       "position": {
         "x": 60,
         "y": 610
@@ -167,7 +167,7 @@
     },
     {
       "id": "aggregate",
-      "label": "按池聚合 metrics",
+      "label": "按语义聚合，保留实例差异",
       "description": "工作量求和；直方图合并后求分位",
       "position": {
         "x": 440,
@@ -187,8 +187,8 @@
     },
     {
       "id": "history",
-      "label": "时序判断与预测",
-      "description": "趋势 / 启动 H / 缩容稳定窗口",
+      "label": "联合信号诊断与时序判断",
+      "description": "负载趋势 / 诊断假设 / 启动窗口",
       "position": {
         "x": 440,
         "y": 480
@@ -207,7 +207,7 @@
     },
     {
       "id": "recommend",
-      "label": "输出：目标副本数及原因",
+      "label": "输出：目标、依据与不确定性",
       "description": "max(prefill、KV、预测、下限)",
       "position": {
         "x": 440,
@@ -367,8 +367,8 @@
     },
     {
       "id": "feedback",
-      "label": "输出：实际状态与误差",
-      "description": "观测回流；UNKNOWN 继续查原操作",
+      "label": "输出：实际结果与诊断证据",
+      "description": "反馈下一轮；UNKNOWN 查原操作",
       "position": {
         "x": 1200,
         "y": 610
@@ -427,8 +427,8 @@
     },
     {
       "id": "measurement",
-      "label": "TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0",
-      "description": "新工作量、TTFT 聚合和预测链路尚未实现；已有计数和生命周期基础",
+      "label": "Metrics 是策略与诊断的输入契约：来源、语义、窗口、分布、质量",
+      "description": "联合信号提供候选原因；根因仍需阶段证据、对照或受控验证",
       "position": {
         "x": 60,
         "y": 1040

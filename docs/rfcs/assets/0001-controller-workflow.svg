@@ -114,25 +114,25 @@
     <title>① Observe · 观测</title>
     <rect x="60" y="235" width="300" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
     <text x="210.0" y="268.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">① Observe · 观测</text>
-    <text x="210.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">每隔 Δt 采样一次，形成同一池快照</text>
+    <text x="210.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">先明确指标口径，再按周期采样</text>
   </g>
   <g id="node-sample" class="semantic-cell semantic-node" data-semantic-id="sample">
-    <title>采集实例与请求指标</title>
+    <title>按决策问题选择指标</title>
     <rect x="60" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="210.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">采集实例与请求指标</text>
-    <text x="210.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">队列 / KV / 输入预算 / TTFT</text>
+    <text x="210.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">按决策问题选择指标</text>
+    <text x="210.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">需求 / 排队 / 阶段时延 / 状态压力</text>
   </g>
   <g id="node-validate" class="semantic-cell semantic-node" data-semantic-id="validate">
-    <title>校验身份与数据质量</title>
+    <title>验证指标语义与数据质量</title>
     <rect x="60" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="210.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">校验身份与数据质量</text>
-    <text x="210.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">实例 Job、时间戳、缺失与过期</text>
+    <text x="210.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">验证指标语义与数据质量</text>
+    <text x="210.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">Job / 来源 / 单位 / 窗口 / 新鲜度</text>
   </g>
   <g id="node-snapshot" class="semantic-cell semantic-node" data-semantic-id="snapshot">
-    <title>输出：有效指标快照</title>
+    <title>输出：带口径的有效快照</title>
     <rect x="60" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="210.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：有效指标快照</text>
-    <text x="210.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">各实例负载 + 请求阶段 + 当前规模</text>
+    <text x="210.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：带口径的有效快照</text>
+    <text x="210.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">保留分布与覆盖量；缺测不填 0</text>
   </g>
   <g id="node-decide" class="semantic-cell semantic-node" data-semantic-id="decide">
     <title>② Decide · 决策</title>
@@ -141,21 +141,21 @@
     <text x="590.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">只计算建议，不直接修改模型</text>
   </g>
   <g id="node-aggregate" class="semantic-cell semantic-node" data-semantic-id="aggregate">
-    <title>按池聚合 metrics</title>
+    <title>按语义聚合，保留实例差异</title>
     <rect x="440" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="590.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">按池聚合 metrics</text>
+    <text x="590.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">按语义聚合，保留实例差异</text>
     <text x="590.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">工作量求和；直方图合并后求分位</text>
   </g>
   <g id="node-history" class="semantic-cell semantic-node" data-semantic-id="history">
-    <title>时序判断与预测</title>
+    <title>联合信号诊断与时序判断</title>
     <rect x="440" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="590.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">时序判断与预测</text>
-    <text x="590.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">趋势 / 启动 H / 缩容稳定窗口</text>
+    <text x="590.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">联合信号诊断与时序判断</text>
+    <text x="590.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">负载趋势 / 诊断假设 / 启动窗口</text>
   </g>
   <g id="node-recommend" class="semantic-cell semantic-node" data-semantic-id="recommend">
-    <title>输出：目标副本数及原因</title>
+    <title>输出：目标、依据与不确定性</title>
     <rect x="440" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="590.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：目标副本数及原因</text>
+    <text x="590.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：目标、依据与不确定性</text>
     <text x="590.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">max(prefill、KV、预测、下限)</text>
   </g>
   <g id="node-actuate" class="semantic-cell semantic-node" data-semantic-id="actuate">
@@ -201,10 +201,10 @@
     <text x="1350.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">新增实例承接 / 排队 / TTFT / 释放</text>
   </g>
   <g id="node-feedback" class="semantic-cell semantic-node" data-semantic-id="feedback">
-    <title>输出：实际状态与误差</title>
+    <title>输出：实际结果与诊断证据</title>
     <rect x="1200" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
-    <text x="1350.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：实际状态与误差</text>
-    <text x="1350.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">观测回流；UNKNOWN 继续查原操作</text>
+    <text x="1350.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：实际结果与诊断证据</text>
+    <text x="1350.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">反馈下一轮；UNKNOWN 查原操作</text>
   </g>
   <g id="node-example" class="semantic-cell semantic-node" data-semantic-id="example">
     <title>同一快照的决策例子：prefill 需 3、KV 需 2、预测需 2 → 目标 3</title>
@@ -219,9 +219,9 @@
     <text x="780.0" y="1003.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">本期复用已有 Ray 资源池；云平台扩节点为后续后端能力，尚未实现</text>
   </g>
   <g id="node-measurement" class="semantic-cell semantic-node" data-semantic-id="measurement">
-    <title>TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0</title>
+    <title>Metrics 是策略与诊断的输入契约：来源、语义、窗口、分布、质量</title>
     <rect x="60" y="1040" width="1440" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
-    <text x="780.0" y="1073.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0</text>
-    <text x="780.0" y="1093.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">新工作量、TTFT 聚合和预测链路尚未实现；已有计数和生命周期基础</text>
+    <text x="780.0" y="1073.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">Metrics 是策略与诊断的输入契约：来源、语义、窗口、分布、质量</text>
+    <text x="780.0" y="1093.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">联合信号提供候选原因；根因仍需阶段证据、对照或受控验证</text>
   </g>
 </svg>
