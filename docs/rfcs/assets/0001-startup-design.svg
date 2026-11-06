@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="750" viewBox="0 0 1180 750" role="img" aria-label="图3：让启动提前发生">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <style>.semantic-cell:target&gt;*{filter:drop-shadow(0 0 5px #f59e0b);stroke-width:4px!important}.semantic-cell:target text{filter:none;font-weight:700}</style>
+    <marker id="arrow-475569" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+    </marker>
+    <marker id="arrow-596153" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#596153" />
+    </marker>
+    <marker id="arrow-b7492c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b7492c" />
+    </marker>
+  </defs>
+  <g id="edge-reactive-wait" class="semantic-cell semantic-edge" data-semantic-id="reactive-wait">
+    <title>reactive-now to reactive-start</title>
+    <polyline points="360,270.0 430,270.0" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-reactive-load" class="semantic-cell semantic-edge" data-semantic-id="reactive-load">
+    <title>启动 60 s</title>
+    <polyline points="730,270.0 800,270.0" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+    <text x="765.0" y="262.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">启动 60 s</text>
+  </g>
+  <g id="edge-forecast-load" class="semantic-cell semantic-edge" data-semantic-id="forecast-load">
+    <title>启动 60 s</title>
+    <polyline points="360,470.0 430,470.0" fill="none" stroke="#b7492c" stroke-width="1.5" marker-end="url(#arrow-b7492c)" />
+    <text x="395.0" y="462.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">启动 60 s</text>
+  </g>
+  <g id="edge-forecast-followup" class="semantic-cell semantic-edge" data-semantic-id="forecast-followup">
+    <title>forecast-ready to forecast-use</title>
+    <polyline points="730,470.0 800,470.0" fill="none" stroke="#b7492c" stroke-width="1.5" marker-end="url(#arrow-b7492c)" />
+  </g>
+  <g id="node-title" class="semantic-cell semantic-node" data-semantic-id="title">
+    <title>图 3 · 在容量真正需要之前启动</title>
+    <rect x="60" y="10" width="1040" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="580.0" y="43.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">图 3 · 在容量真正需要之前启动</text>
+    <text x="580.0" y="63.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">条件性时序示意：t = 0 已观察到上升趋势；启动 H = 60 s</text>
+  </g>
+  <g id="node-axis-now" class="semantic-cell semantic-node" data-semantic-id="axis-now">
+    <title>t = 0 s</title>
+    <rect x="60" y="120" width="300" height="60" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="210.0" y="143.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">t = 0 s</text>
+    <text x="210.0" y="163.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">现在：2 个 Ready</text>
+  </g>
+  <g id="node-axis-demand" class="semantic-cell semantic-node" data-semantic-id="axis-demand">
+    <title>t = 60 s</title>
+    <rect x="430" y="120" width="300" height="60" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="580.0" y="143.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">t = 60 s</text>
+    <text x="580.0" y="163.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">需求达到 3 个实例</text>
+  </g>
+  <g id="node-axis-late" class="semantic-cell semantic-node" data-semantic-id="axis-late">
+    <title>t = 120 s</title>
+    <rect x="800" y="120" width="300" height="60" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="950.0" y="143.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">t = 120 s</text>
+    <text x="950.0" y="163.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">后续时刻</text>
+  </g>
+  <g id="node-reactive-now" class="semantic-cell semantic-node" data-semantic-id="reactive-now">
+    <title>仅工作量反应式</title>
+    <rect x="60" y="220" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="263.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">仅工作量反应式</text>
+    <text x="210.0" y="283.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">当前压力只需要 2 个：等待</text>
+  </g>
+  <g id="node-reactive-start" class="semantic-cell semantic-node" data-semantic-id="reactive-start">
+    <title>发现需要 3 个，才启动</title>
+    <rect x="430" y="220" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="580.0" y="263.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">发现需要 3 个，才启动</text>
+    <text x="580.0" y="283.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">2 个 Ready + 1 个 starting</text>
+  </g>
+  <g id="node-reactive-ready" class="semantic-cell semantic-node" data-semantic-id="reactive-ready">
+    <title>第 3 个才 Ready</title>
+    <rect x="800" y="220" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="950.0" y="263.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">第 3 个才 Ready</text>
+    <text x="950.0" y="283.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">中间存在容量不足风险</text>
+  </g>
+  <g id="node-forecast-start" class="semantic-cell semantic-node" data-semantic-id="forecast-start">
+    <title>工作量 + 启动前瞻</title>
+    <rect x="60" y="420" width="300" height="100" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="210.0" y="463.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">工作量 + 启动前瞻</text>
+    <text x="210.0" y="483.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">预测 60 s 后需 3 个：现在启动</text>
+  </g>
+  <g id="node-forecast-ready" class="semantic-cell semantic-node" data-semantic-id="forecast-ready">
+    <title>第 3 个提前准备完成</title>
+    <rect x="430" y="420" width="300" height="100" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="580.0" y="463.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">第 3 个提前准备完成</text>
+    <text x="580.0" y="483.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">3 个 Ready，可承接新增工作</text>
+  </g>
+  <g id="node-forecast-use" class="semantic-cell semantic-node" data-semantic-id="forecast-use">
+    <title>继续核真实承接与时延</title>
+    <rect x="800" y="420" width="300" height="100" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="950.0" y="463.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">继续核真实承接与时延</text>
+    <text x="950.0" y="483.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">预测过冲则承担额外预约成本</text>
+  </g>
+  <g id="node-scope" class="semantic-cell semantic-node" data-semantic-id="scope">
+    <title>优化点：缩短需求出现后等待新增容量的时间，不是加速模型加载</title>
+    <rect x="60" y="590" width="1040" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="580.0" y="623.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">优化点：缩短需求出现后等待新增容量的时间，不是加速模型加载</text>
+    <text x="580.0" y="643.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">前提：趋势可观测、预测有用、启动估计可信且预算可用；无预兆突发无法凭空提前知道</text>
+  </g>
+</svg>

@@ -1,0 +1,91 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="830" viewBox="0 0 1180 830" role="img" aria-label="图4：容量建议到安全动作">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <style>.semantic-cell:target&gt;*{filter:drop-shadow(0 0 5px #f59e0b);stroke-width:4px!important}.semantic-cell:target text{filter:none;font-weight:700}</style>
+    <marker id="arrow-475569" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+    </marker>
+    <marker id="arrow-596153" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#596153" />
+    </marker>
+  </defs>
+  <g id="edge-prefill-target" class="semantic-cell semantic-edge" data-semantic-id="prefill-target">
+    <title>prefill to merge</title>
+    <polyline points="210.0,245 210.0,280.0 209.968,280.0 209.968,315" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-kv-target" class="semantic-cell semantic-edge" data-semantic-id="kv-target">
+    <title>kv to merge</title>
+    <polyline points="580.0,245 580.0,315" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-forecast-target" class="semantic-cell semantic-edge" data-semantic-id="forecast-target">
+    <title>prediction to merge</title>
+    <polyline points="950.0,245 950.0,280.0 950.032,280.0 950.032,315" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-target-expand" class="semantic-cell semantic-edge" data-semantic-id="target-expand">
+    <title>merge to expand</title>
+    <polyline points="209.968,395 209.968,440.0 210.0,440.0 210.0,485" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-target-hold" class="semantic-cell semantic-edge" data-semantic-id="target-hold">
+    <title>merge to hold</title>
+    <polyline points="580.0,395 580.0,485" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-target-shrink" class="semantic-cell semantic-edge" data-semantic-id="target-shrink">
+    <title>merge to shrink</title>
+    <polyline points="950.032,395 950.032,440.0 950.0,440.0 950.0,485" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="node-title" class="semantic-cell semantic-node" data-semantic-id="title">
+    <title>图 4 · 先算需要几个，再决定何时执行</title>
+    <rect x="60" y="10" width="1040" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="580.0" y="43.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">图 4 · 先算需要几个，再决定何时执行</text>
+    <text x="580.0" y="63.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">假设算例：分支建议 3 / 2 / 2；配置范围 1–4</text>
+  </g>
+  <g id="node-prefill" class="semantic-cell semantic-node" data-semantic-id="prefill">
+    <title>prefill 分支 → 3</title>
+    <rect x="60" y="145" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="188.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">prefill 分支 → 3</text>
+    <text x="210.0" y="208.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">ceil(B / C_prefill / W_queue)</text>
+  </g>
+  <g id="node-kv" class="semantic-cell semantic-node" data-semantic-id="kv">
+    <title>KV 分支 → 2</title>
+    <rect x="430" y="145" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="580.0" y="188.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">KV 分支 → 2</text>
+    <text x="580.0" y="208.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">ceil(sum(u_j) / U_kv)</text>
+  </g>
+  <g id="node-prediction" class="semantic-cell semantic-node" data-semantic-id="prediction">
+    <title>启动前瞻分支 → 2</title>
+    <rect x="800" y="145" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="950.0" y="188.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">启动前瞻分支 → 2</text>
+    <text x="950.0" y="208.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">ceil(预测到达量 / C_sustained)</text>
+  </g>
+  <g id="node-merge" class="semantic-cell semantic-node" data-semantic-id="merge">
+    <title>目标 = clamp(max(3, 2, 2, 下限)) = 3</title>
+    <rect x="60" y="315" width="1040" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="580.0" y="348.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">目标 = clamp(max(3, 2, 2, 下限)) = 3</text>
+    <text x="580.0" y="368.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">取最大值，不相加：各分支对同一实例池提出容量约束</text>
+  </g>
+  <g id="node-expand" class="semantic-cell semantic-node" data-semantic-id="expand">
+    <title>高于 Ready + starting</title>
+    <rect x="60" y="485" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="528.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">高于 Ready + starting</text>
+    <text x="210.0" y="548.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">差额 1：核预算后启动 1 个</text>
+  </g>
+  <g id="node-hold" class="semantic-cell semantic-node" data-semantic-id="hold">
+    <title>等于 Ready + starting</title>
+    <rect x="430" y="485" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="580.0" y="528.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">等于 Ready + starting</text>
+    <text x="580.0" y="548.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">已有 1 个在启动：不重复申请</text>
+  </g>
+  <g id="node-shrink" class="semantic-cell semantic-node" data-semantic-id="shrink">
+    <title>低于当前规模</title>
+    <rect x="800" y="485" width="300" height="100" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="950.0" y="528.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">低于当前规模</text>
+    <text x="950.0" y="548.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">稳定确认 → 排空 → 停止 1 个</text>
+  </g>
+  <g id="node-boundary" class="semantic-cell semantic-node" data-semantic-id="boundary">
+    <title>每轮最多一个新动作；未终止实例均占预算，starting 不算 Ready</title>
+    <rect x="60" y="670" width="1040" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="580.0" y="703.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">每轮最多一个新动作；未终止实例均占预算，starting 不算 Ready</text>
+    <text x="580.0" y="723.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">缩容须核剩余 Ready、双排空及准确 Job；未知结果只查询原操作</text>
+  </g>
+</svg>

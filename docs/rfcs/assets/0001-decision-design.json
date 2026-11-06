@@ -1,0 +1,277 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "图4：容量建议到安全动作",
+    "direction": "LR",
+    "theme": "light",
+    "background": "#ffffff",
+    "gap": 70
+  },
+  "nodes": [
+    {
+      "id": "title",
+      "label": "图 4 · 先算需要几个，再决定何时执行",
+      "description": "假设算例：分支建议 3 / 2 / 2；配置范围 1–4",
+      "position": {
+        "x": 60,
+        "y": 10
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "prefill",
+      "label": "prefill 分支 → 3",
+      "description": "ceil(B / C_prefill / W_queue)",
+      "position": {
+        "x": 60,
+        "y": 145
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "kv",
+      "label": "KV 分支 → 2",
+      "description": "ceil(sum(u_j) / U_kv)",
+      "position": {
+        "x": 430,
+        "y": 145
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "prediction",
+      "label": "启动前瞻分支 → 2",
+      "description": "ceil(预测到达量 / C_sustained)",
+      "position": {
+        "x": 800,
+        "y": 145
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "merge",
+      "label": "目标 = clamp(max(3, 2, 2, 下限)) = 3",
+      "description": "取最大值，不相加：各分支对同一实例池提出容量约束",
+      "position": {
+        "x": 60,
+        "y": 315
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "expand",
+      "label": "高于 Ready + starting",
+      "description": "差额 1：核预算后启动 1 个",
+      "position": {
+        "x": 60,
+        "y": 485
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "hold",
+      "label": "等于 Ready + starting",
+      "description": "已有 1 个在启动：不重复申请",
+      "position": {
+        "x": 430,
+        "y": 485
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "shrink",
+      "label": "低于当前规模",
+      "description": "稳定确认 → 排空 → 停止 1 个",
+      "position": {
+        "x": 800,
+        "y": 485
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "boundary",
+      "label": "每轮最多一个新动作；未终止实例均占预算，starting 不算 Ready",
+      "description": "缩容须核剩余 Ready、双排空及准确 Job；未知结果只查询原操作",
+      "position": {
+        "x": 60,
+        "y": 670
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "prefill-target",
+      "from": "prefill",
+      "to": "merge",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.1442
+      }
+    },
+    {
+      "id": "kv-target",
+      "from": "kv",
+      "to": "merge",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "forecast-target",
+      "from": "prediction",
+      "to": "merge",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.8558
+      }
+    },
+    {
+      "id": "target-expand",
+      "from": "merge",
+      "to": "expand",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.1442,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "target-hold",
+      "from": "merge",
+      "to": "hold",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "target-shrink",
+      "from": "merge",
+      "to": "shrink",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.8558,
+        "target_offset": 0.5
+      }
+    }
+  ]
+}

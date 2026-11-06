@@ -1,0 +1,248 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "图2：相同请求数，不同工作量",
+    "direction": "LR",
+    "theme": "light",
+    "background": "#ffffff",
+    "gap": 70
+  },
+  "nodes": [
+    {
+      "id": "title",
+      "label": "图 2 · 请求数相同，容量需求可能不同",
+      "description": "假设算例：仅改变输入长度，不含 decode 与缓存差异",
+      "position": {
+        "x": 60,
+        "y": 10
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "short-input",
+      "label": "12 个短输入请求",
+      "description": "每个 1,000 token",
+      "position": {
+        "x": 60,
+        "y": 140
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "short-work",
+      "label": "预算 B = 12,000 token",
+      "description": "12 × 1,000",
+      "position": {
+        "x": 430,
+        "y": 140
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "short-target",
+      "label": "prefill 建议 = 1 个实例",
+      "description": "ceil(12,000 / 4,000 / 10)",
+      "position": {
+        "x": 800,
+        "y": 140
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "long-input",
+      "label": "12 个长输入请求",
+      "description": "每个 10,000 token",
+      "position": {
+        "x": 60,
+        "y": 320
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "long-work",
+      "label": "预算 B = 120,000 token",
+      "description": "12 × 10,000",
+      "position": {
+        "x": 430,
+        "y": 320
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "long-target",
+      "label": "prefill 建议 = 3 个实例",
+      "description": "ceil(120,000 / 4,000 / 10)",
+      "position": {
+        "x": 800,
+        "y": 320
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "assumptions",
+      "label": "共同假设：C_prefill = 4,000 token/s；W_queue = 10 s",
+      "description": "同一模型 / 路径 / 口径的有效转换率；数字未实测、未用于冻结参数",
+      "position": {
+        "x": 60,
+        "y": 485
+      },
+      "size": {
+        "width": 1040,
+        "height": 70
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "meaning",
+      "label": "优化点：容量随工作量变化，而不是只随请求个数变化",
+      "description": "这里只计算 prefill 分支；最终目标还须取 KV、预测及配置下限的最大值",
+      "position": {
+        "x": 60,
+        "y": 575
+      },
+      "size": {
+        "width": 1040,
+        "height": 70
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "short-count-work",
+      "from": "short-input",
+      "to": "short-work",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "short-work-target",
+      "from": "short-work",
+      "to": "short-target",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "long-count-work",
+      "from": "long-input",
+      "to": "long-work",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "long-work-target",
+      "from": "long-work",
+      "to": "long-target",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    }
+  ]
+}

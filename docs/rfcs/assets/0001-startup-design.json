@@ -1,0 +1,288 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "图3：让启动提前发生",
+    "direction": "LR",
+    "theme": "light",
+    "background": "#ffffff",
+    "gap": 70
+  },
+  "nodes": [
+    {
+      "id": "title",
+      "label": "图 3 · 在容量真正需要之前启动",
+      "description": "条件性时序示意：t = 0 已观察到上升趋势；启动 H = 60 s",
+      "position": {
+        "x": 60,
+        "y": 10
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "axis-now",
+      "label": "t = 0 s",
+      "description": "现在：2 个 Ready",
+      "position": {
+        "x": 60,
+        "y": 120
+      },
+      "size": {
+        "width": 300,
+        "height": 60
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "axis-demand",
+      "label": "t = 60 s",
+      "description": "需求达到 3 个实例",
+      "position": {
+        "x": 430,
+        "y": 120
+      },
+      "size": {
+        "width": 300,
+        "height": 60
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "axis-late",
+      "label": "t = 120 s",
+      "description": "后续时刻",
+      "position": {
+        "x": 800,
+        "y": 120
+      },
+      "size": {
+        "width": 300,
+        "height": 60
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "reactive-now",
+      "label": "仅工作量反应式",
+      "description": "当前压力只需要 2 个：等待",
+      "position": {
+        "x": 60,
+        "y": 220
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "reactive-start",
+      "label": "发现需要 3 个，才启动",
+      "description": "2 个 Ready + 1 个 starting",
+      "position": {
+        "x": 430,
+        "y": 220
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "reactive-ready",
+      "label": "第 3 个才 Ready",
+      "description": "中间存在容量不足风险",
+      "position": {
+        "x": 800,
+        "y": 220
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "forecast-start",
+      "label": "工作量 + 启动前瞻",
+      "description": "预测 60 s 后需 3 个：现在启动",
+      "position": {
+        "x": 60,
+        "y": 420
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "forecast-ready",
+      "label": "第 3 个提前准备完成",
+      "description": "3 个 Ready，可承接新增工作",
+      "position": {
+        "x": 430,
+        "y": 420
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "forecast-use",
+      "label": "继续核真实承接与时延",
+      "description": "预测过冲则承担额外预约成本",
+      "position": {
+        "x": 800,
+        "y": 420
+      },
+      "size": {
+        "width": 300,
+        "height": 100
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "scope",
+      "label": "优化点：缩短需求出现后等待新增容量的时间，不是加速模型加载",
+      "description": "前提：趋势可观测、预测有用、启动估计可信且预算可用；无预兆突发无法凭空提前知道",
+      "position": {
+        "x": 60,
+        "y": 590
+      },
+      "size": {
+        "width": 1040,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "reactive-wait",
+      "from": "reactive-now",
+      "to": "reactive-start",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "reactive-load",
+      "from": "reactive-start",
+      "to": "reactive-ready",
+      "label": "启动 60 s",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "forecast-load",
+      "from": "forecast-start",
+      "to": "forecast-ready",
+      "label": "启动 60 s",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    },
+    {
+      "id": "forecast-followup",
+      "from": "forecast-ready",
+      "to": "forecast-use",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#b7492c",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5
+      }
+    }
+  ]
+}
