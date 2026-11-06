@@ -15,3 +15,7 @@
 | [图4：容量与动作](0001-decision-design.png) | §7.5：何时扩缩、扩缩多少 | [draw.io](0001-decision-design.drawio)、[JSON](0001-decision-design.json) |
 
 三张图均为假设算例/条件性机制示意，未运行性能模拟或硬件实验。生成命令与上文相同，`--name`取各文件名；三张新图的draw.io保留编译器默认字体及语义元数据，SVG按上文统一放大字体。PNG从SVG渲染，已逐图打开检查；原生Desktop导出未运行。
+
+## Controller 主工作流
+
+[四步工作流PNG](0001-controller-workflow.png)、[SVG](0001-controller-workflow.svg)、[draw.io](0001-controller-workflow.drawio)、[JSON](0001-controller-workflow.json)对应RFC §5.4，展开观测、聚合/时序决策、执行接口和验证反馈。语义源文件保留分组名称，展示时隐藏重复的分组标题；PNG以1950像素宽由SVG渲染。全部为拟议设计，非新链路已实现或TTFT收益证明。原生Desktop导出未运行。

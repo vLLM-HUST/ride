@@ -1,0 +1,227 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1610" height="1200" viewBox="0 0 1610 1200" role="img" aria-label="Instance Controller 控制循环工作流与数据流">
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <defs>
+    <style>.semantic-cell:target&gt;*{filter:drop-shadow(0 0 5px #f59e0b);stroke-width:4px!important}.semantic-cell:target text{filter:none;font-weight:700}</style>
+    <marker id="arrow-475569" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569" />
+    </marker>
+    <marker id="arrow-596153" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#596153" />
+    </marker>
+  </defs>
+  <g id="group-observe-group" class="semantic-cell semantic-group" data-semantic-id="observe-group">
+    <title>Observe</title>
+    <rect x="30" y="180" width="360" height="555" rx="0" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" />
+    </g>
+  <g id="group-decide-group" class="semantic-cell semantic-group" data-semantic-id="decide-group">
+    <title>Decide</title>
+    <rect x="410" y="180" width="360" height="555" rx="0" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" />
+    </g>
+  <g id="group-actuate-group" class="semantic-cell semantic-group" data-semantic-id="actuate-group">
+    <title>Actuate</title>
+    <rect x="790" y="180" width="360" height="555" rx="0" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" />
+    </g>
+  <g id="group-verify-group" class="semantic-cell semantic-group" data-semantic-id="verify-group">
+    <title>Verify</title>
+    <rect x="1170" y="180" width="360" height="555" rx="0" fill="#f8fafc" stroke="#94a3b8" stroke-width="2" />
+    </g>
+  <g id="edge-sources-observe" class="semantic-cell semantic-edge" data-semantic-id="sources-observe">
+    <title>sources to observe</title>
+    <polyline points="224.16,210 224.16,222.5 210.0,222.5 210.0,235" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-observe-sample" class="semantic-cell semantic-edge" data-semantic-id="observe-sample">
+    <title>observe to sample</title>
+    <polyline points="210.0,315 210.0,350" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-observe-validate" class="semantic-cell semantic-edge" data-semantic-id="observe-validate">
+    <title>sample to validate</title>
+    <polyline points="210.0,445 210.0,480" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-observe-snapshot" class="semantic-cell semantic-edge" data-semantic-id="observe-snapshot">
+    <title>validate to snapshot</title>
+    <polyline points="210.0,575 210.0,610" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-decide-aggregate" class="semantic-cell semantic-edge" data-semantic-id="decide-aggregate">
+    <title>decide to aggregate</title>
+    <polyline points="590.0,315 590.0,350" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-decide-history" class="semantic-cell semantic-edge" data-semantic-id="decide-history">
+    <title>aggregate to history</title>
+    <polyline points="590.0,445 590.0,480" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-decide-recommend" class="semantic-cell semantic-edge" data-semantic-id="decide-recommend">
+    <title>history to recommend</title>
+    <polyline points="590.0,575 590.0,610" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-actuate-guard" class="semantic-cell semantic-edge" data-semantic-id="actuate-guard">
+    <title>actuate to guard</title>
+    <polyline points="970.0,315 970.0,350" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-actuate-manage" class="semantic-cell semantic-edge" data-semantic-id="actuate-manage">
+    <title>guard to manage</title>
+    <polyline points="970.0,445 970.0,480" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-actuate-drain" class="semantic-cell semantic-edge" data-semantic-id="actuate-drain">
+    <title>manage to drain</title>
+    <polyline points="970.0,575 970.0,610" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-verify-receipt" class="semantic-cell semantic-edge" data-semantic-id="verify-receipt">
+    <title>verify to receipt</title>
+    <polyline points="1350.0,315 1350.0,350" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-verify-effect" class="semantic-cell semantic-edge" data-semantic-id="verify-effect">
+    <title>receipt to effect</title>
+    <polyline points="1350.0,445 1350.0,480" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-verify-feedback" class="semantic-cell semantic-edge" data-semantic-id="verify-feedback">
+    <title>effect to feedback</title>
+    <polyline points="1350.0,575 1350.0,610" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+  </g>
+  <g id="edge-observe-decide" class="semantic-cell semantic-edge" data-semantic-id="observe-decide">
+    <title>指标快照</title>
+    <polyline points="360,275.0 440,275.0" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+    <text x="400.0" y="267.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="12" text-anchor="middle">指标快照</text>
+  </g>
+  <g id="edge-decide-actuate" class="semantic-cell semantic-edge" data-semantic-id="decide-actuate">
+    <title>容量建议</title>
+    <polyline points="740,275.0 820,275.0" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+    <text x="780.0" y="267.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="12" text-anchor="middle">容量建议</text>
+  </g>
+  <g id="edge-actuate-verify" class="semantic-cell semantic-edge" data-semantic-id="actuate-verify">
+    <title>操作身份</title>
+    <polyline points="1120,275.0 1200,275.0" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+    <text x="1160.0" y="267.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="12" text-anchor="middle">操作身份</text>
+  </g>
+  <g id="edge-closed-loop" class="semantic-cell semantic-edge" data-semantic-id="closed-loop">
+    <title>下一轮重新采样；确认实际容量，不把目标数当 Ready 数</title>
+    <polyline points="1350.0,705 1350.0,733 210.0,733 210.0,705" fill="none" stroke="#596153" stroke-width="1.5" marker-end="url(#arrow-596153)" />
+    <text x="780.0" y="725.0" fill="#0f172a" font-family="PingFang SC, Arial, sans-serif" font-size="12" text-anchor="middle">下一轮重新采样；确认实际容量，不把目标数当 Ready 数</text>
+  </g>
+  <g id="node-title" class="semantic-cell semantic-node" data-semantic-id="title">
+    <title>Instance Controller · 一轮策略如何运行</title>
+    <rect x="60" y="10" width="1440" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="780.0" y="43.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">Instance Controller · 一轮策略如何运行</text>
+    <text x="780.0" y="63.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">统一四步控制循环；拟议设计，非完成声明</text>
+  </g>
+  <g id="node-sources" class="semantic-cell semantic-node" data-semantic-id="sources">
+    <title>观测来源：vLLM 实例 / 限流层与 KV Controller / RIDE 管理服务</title>
+    <rect x="60" y="130" width="1440" height="80" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="780.0" y="163.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">观测来源：vLLM 实例 / 限流层与 KV Controller / RIDE 管理服务</text>
+    <text x="780.0" y="183.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">负载与请求阶段 → 时延统计 → 实际 Job / Ready / 动作状态</text>
+  </g>
+  <g id="node-observe" class="semantic-cell semantic-node" data-semantic-id="observe">
+    <title>① Observe · 观测</title>
+    <rect x="60" y="235" width="300" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="210.0" y="268.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">① Observe · 观测</text>
+    <text x="210.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">每隔 Δt 采样一次，形成同一池快照</text>
+  </g>
+  <g id="node-sample" class="semantic-cell semantic-node" data-semantic-id="sample">
+    <title>采集实例与请求指标</title>
+    <rect x="60" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">采集实例与请求指标</text>
+    <text x="210.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">队列 / KV / 输入预算 / TTFT</text>
+  </g>
+  <g id="node-validate" class="semantic-cell semantic-node" data-semantic-id="validate">
+    <title>校验身份与数据质量</title>
+    <rect x="60" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">校验身份与数据质量</text>
+    <text x="210.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">实例 Job、时间戳、缺失与过期</text>
+  </g>
+  <g id="node-snapshot" class="semantic-cell semantic-node" data-semantic-id="snapshot">
+    <title>输出：有效指标快照</title>
+    <rect x="60" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="210.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：有效指标快照</text>
+    <text x="210.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">各实例负载 + 请求阶段 + 当前规模</text>
+  </g>
+  <g id="node-decide" class="semantic-cell semantic-node" data-semantic-id="decide">
+    <title>② Decide · 决策</title>
+    <rect x="440" y="235" width="300" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="590.0" y="268.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">② Decide · 决策</text>
+    <text x="590.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">只计算建议，不直接修改模型</text>
+  </g>
+  <g id="node-aggregate" class="semantic-cell semantic-node" data-semantic-id="aggregate">
+    <title>按池聚合 metrics</title>
+    <rect x="440" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="590.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">按池聚合 metrics</text>
+    <text x="590.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">工作量求和；直方图合并后求分位</text>
+  </g>
+  <g id="node-history" class="semantic-cell semantic-node" data-semantic-id="history">
+    <title>时序判断与预测</title>
+    <rect x="440" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="590.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">时序判断与预测</text>
+    <text x="590.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">趋势 / 启动 H / 缩容稳定窗口</text>
+  </g>
+  <g id="node-recommend" class="semantic-cell semantic-node" data-semantic-id="recommend">
+    <title>输出：目标副本数及原因</title>
+    <rect x="440" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="590.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：目标副本数及原因</text>
+    <text x="590.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">max(prefill、KV、预测、下限)</text>
+  </g>
+  <g id="node-actuate" class="semantic-cell semantic-node" data-semantic-id="actuate">
+    <title>③ Actuate · 执行</title>
+    <rect x="820" y="235" width="300" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="970.0" y="268.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">③ Actuate · 执行</text>
+    <text x="970.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">通过公共 SDK 与适配器执行</text>
+  </g>
+  <g id="node-guard" class="semantic-cell semantic-node" data-semantic-id="guard">
+    <title>核预算与原操作</title>
+    <rect x="820" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="970.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">核预算与原操作</text>
+    <text x="970.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">未终止预约 / 归属 / 不重复提交</text>
+  </g>
+  <g id="node-manage" class="semantic-cell semantic-node" data-semantic-id="manage">
+    <title>按建议调用扩或缩接口</title>
+    <rect x="820" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="970.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">按建议调用扩或缩接口</text>
+    <text x="970.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">RIDE 启停 / Request-KV 排空</text>
+  </g>
+  <g id="node-drain" class="semantic-cell semantic-node" data-semantic-id="drain">
+    <title>输出：原操作身份与阶段</title>
+    <rect x="820" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="970.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：原操作身份与阶段</text>
+    <text x="970.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">扩缩互斥；受理不等于生效</text>
+  </g>
+  <g id="node-verify" class="semantic-cell semantic-node" data-semantic-id="verify">
+    <title>④ Verify · 验证</title>
+    <rect x="1200" y="235" width="300" height="80" rx="0" fill="#fff6ed" stroke="#b7492c" stroke-width="2" />
+    <text x="1350.0" y="268.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">④ Verify · 验证</text>
+    <text x="1350.0" y="288.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">检查动作和效果，反馈下一轮</text>
+  </g>
+  <g id="node-receipt" class="semantic-cell semantic-node" data-semantic-id="receipt">
+    <title>核 Job 与动作回执</title>
+    <rect x="1200" y="350" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="1350.0" y="390.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">核 Job 与动作回执</text>
+    <text x="1350.0" y="410.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">启动、激活、停止分别查实际状态</text>
+  </g>
+  <g id="node-effect" class="semantic-cell semantic-node" data-semantic-id="effect">
+    <title>核业务与资源效果</title>
+    <rect x="1200" y="480" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="1350.0" y="520.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">核业务与资源效果</text>
+    <text x="1350.0" y="540.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">新增实例承接 / 排队 / TTFT / 释放</text>
+  </g>
+  <g id="node-feedback" class="semantic-cell semantic-node" data-semantic-id="feedback">
+    <title>输出：实际状态与误差</title>
+    <rect x="1200" y="610" width="300" height="95" rx="0" fill="#ffffff" stroke="#454b43" stroke-width="2" />
+    <text x="1350.0" y="650.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">输出：实际状态与误差</text>
+    <text x="1350.0" y="670.5" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">观测回流；UNKNOWN 继续查原操作</text>
+  </g>
+  <g id="node-example" class="semantic-cell semantic-node" data-semantic-id="example">
+    <title>同一快照的决策例子：prefill 需 3、KV 需 2、预测需 2 → 目标 3</title>
+    <rect x="60" y="845" width="1440" height="80" rx="0" fill="#fff6ed" stroke="#ffffff" stroke-width="2" />
+    <text x="780.0" y="878.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">同一快照的决策例子：prefill 需 3、KV 需 2、预测需 2 → 目标 3</text>
+    <text x="780.0" y="898.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">2 Ready：启动 1；2 Ready + 1 starting：不重复启动</text>
+  </g>
+  <g id="node-boundary" class="semantic-cell semantic-node" data-semantic-id="boundary">
+    <title>接口边界：Instance → ride.sdk → RIDE → Ray / vLLM；Request / KV 通过各自 API 协同</title>
+    <rect x="60" y="950" width="1440" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="780.0" y="983.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">接口边界：Instance → ride.sdk → RIDE → Ray / vLLM；Request / KV 通过各自 API 协同</text>
+    <text x="780.0" y="1003.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">本期复用已有 Ray 资源池；云平台扩节点为后续后端能力，尚未实现</text>
+  </g>
+  <g id="node-measurement" class="semantic-cell semantic-node" data-semantic-id="measurement">
+    <title>TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0</title>
+    <rect x="60" y="1040" width="1440" height="80" rx="0" fill="#ffffff" stroke="#ffffff" stroke-width="2" />
+    <text x="780.0" y="1073.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="17" font-weight="700" text-anchor="middle">TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0</text>
+    <text x="780.0" y="1093.0" fill="#242822" font-family="PingFang SC, Arial, sans-serif" font-size="13" text-anchor="middle">新工作量、TTFT 聚合和预测链路尚未实现；已有计数和生命周期基础</text>
+  </g>
+</svg>

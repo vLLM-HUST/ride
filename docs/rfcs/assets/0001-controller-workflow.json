@@ -1,0 +1,723 @@
+{
+  "version": "1",
+  "diagram": {
+    "title": "Instance Controller 控制循环工作流与数据流",
+    "direction": "LR",
+    "theme": "light",
+    "background": "#ffffff",
+    "gap": 60
+  },
+  "groups": [
+    {
+      "id": "observe-group",
+      "label": "Observe"
+    },
+    {
+      "id": "decide-group",
+      "label": "Decide"
+    },
+    {
+      "id": "actuate-group",
+      "label": "Actuate"
+    },
+    {
+      "id": "verify-group",
+      "label": "Verify"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "title",
+      "label": "Instance Controller · 一轮策略如何运行",
+      "description": "统一四步控制循环；拟议设计，非完成声明",
+      "position": {
+        "x": 60,
+        "y": 10
+      },
+      "size": {
+        "width": 1440,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "sources",
+      "label": "观测来源：vLLM 实例 / 限流层与 KV Controller / RIDE 管理服务",
+      "description": "负载与请求阶段 → 时延统计 → 实际 Job / Ready / 动作状态",
+      "position": {
+        "x": 60,
+        "y": 130
+      },
+      "size": {
+        "width": 1440,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      }
+    },
+    {
+      "id": "observe",
+      "label": "① Observe · 观测",
+      "description": "每隔 Δt 采样一次，形成同一池快照",
+      "position": {
+        "x": 60,
+        "y": 235
+      },
+      "size": {
+        "width": 300,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "observe-group"
+    },
+    {
+      "id": "sample",
+      "label": "采集实例与请求指标",
+      "description": "队列 / KV / 输入预算 / TTFT",
+      "position": {
+        "x": 60,
+        "y": 350
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "observe-group"
+    },
+    {
+      "id": "validate",
+      "label": "校验身份与数据质量",
+      "description": "实例 Job、时间戳、缺失与过期",
+      "position": {
+        "x": 60,
+        "y": 480
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "observe-group"
+    },
+    {
+      "id": "snapshot",
+      "label": "输出：有效指标快照",
+      "description": "各实例负载 + 请求阶段 + 当前规模",
+      "position": {
+        "x": 60,
+        "y": 610
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "observe-group"
+    },
+    {
+      "id": "decide",
+      "label": "② Decide · 决策",
+      "description": "只计算建议，不直接修改模型",
+      "position": {
+        "x": 440,
+        "y": 235
+      },
+      "size": {
+        "width": 300,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "decide-group"
+    },
+    {
+      "id": "aggregate",
+      "label": "按池聚合 metrics",
+      "description": "工作量求和；直方图合并后求分位",
+      "position": {
+        "x": 440,
+        "y": 350
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "decide-group"
+    },
+    {
+      "id": "history",
+      "label": "时序判断与预测",
+      "description": "趋势 / 启动 H / 缩容稳定窗口",
+      "position": {
+        "x": 440,
+        "y": 480
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "decide-group"
+    },
+    {
+      "id": "recommend",
+      "label": "输出：目标副本数及原因",
+      "description": "max(prefill、KV、预测、下限)",
+      "position": {
+        "x": 440,
+        "y": 610
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "decide-group"
+    },
+    {
+      "id": "actuate",
+      "label": "③ Actuate · 执行",
+      "description": "通过公共 SDK 与适配器执行",
+      "position": {
+        "x": 820,
+        "y": 235
+      },
+      "size": {
+        "width": 300,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "actuate-group"
+    },
+    {
+      "id": "guard",
+      "label": "核预算与原操作",
+      "description": "未终止预约 / 归属 / 不重复提交",
+      "position": {
+        "x": 820,
+        "y": 350
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "actuate-group"
+    },
+    {
+      "id": "manage",
+      "label": "按建议调用扩或缩接口",
+      "description": "RIDE 启停 / Request-KV 排空",
+      "position": {
+        "x": 820,
+        "y": 480
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "actuate-group"
+    },
+    {
+      "id": "drain",
+      "label": "输出：原操作身份与阶段",
+      "description": "扩缩互斥；受理不等于生效",
+      "position": {
+        "x": 820,
+        "y": 610
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "actuate-group"
+    },
+    {
+      "id": "verify",
+      "label": "④ Verify · 验证",
+      "description": "检查动作和效果，反馈下一轮",
+      "position": {
+        "x": 1200,
+        "y": 235
+      },
+      "size": {
+        "width": 300,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#b7492c",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "verify-group"
+    },
+    {
+      "id": "receipt",
+      "label": "核 Job 与动作回执",
+      "description": "启动、激活、停止分别查实际状态",
+      "position": {
+        "x": 1200,
+        "y": 350
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "verify-group"
+    },
+    {
+      "id": "effect",
+      "label": "核业务与资源效果",
+      "description": "新增实例承接 / 排队 / TTFT / 释放",
+      "position": {
+        "x": 1200,
+        "y": 480
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "verify-group"
+    },
+    {
+      "id": "feedback",
+      "label": "输出：实际状态与误差",
+      "description": "观测回流；UNKNOWN 继续查原操作",
+      "position": {
+        "x": 1200,
+        "y": 610
+      },
+      "size": {
+        "width": 300,
+        "height": 95
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#454b43",
+        "font": "#242822",
+        "rounded": false
+      },
+      "group": "verify-group"
+    },
+    {
+      "id": "example",
+      "label": "同一快照的决策例子：prefill 需 3、KV 需 2、预测需 2 → 目标 3",
+      "description": "2 Ready：启动 1；2 Ready + 1 starting：不重复启动",
+      "position": {
+        "x": 60,
+        "y": 845
+      },
+      "size": {
+        "width": 1440,
+        "height": 80
+      },
+      "style": {
+        "fill": "#fff6ed",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "boundary",
+      "label": "接口边界：Instance → ride.sdk → RIDE → Ray / vLLM；Request / KV 通过各自 API 协同",
+      "description": "本期复用已有 Ray 资源池；云平台扩节点为后续后端能力，尚未实现",
+      "position": {
+        "x": 60,
+        "y": 950
+      },
+      "size": {
+        "width": 1440,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    },
+    {
+      "id": "measurement",
+      "label": "TTFT 必须区分引擎与端到端口径；分位数不可直接平均；缺测不填 0",
+      "description": "新工作量、TTFT 聚合和预测链路尚未实现；已有计数和生命周期基础",
+      "position": {
+        "x": 60,
+        "y": 1040
+      },
+      "size": {
+        "width": 1440,
+        "height": 80
+      },
+      "style": {
+        "fill": "#ffffff",
+        "stroke": "#ffffff",
+        "font": "#242822",
+        "rounded": false
+      },
+      "kind": "note"
+    }
+  ],
+  "edges": [
+    {
+      "id": "sources-observe",
+      "from": "sources",
+      "to": "observe",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.114,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "observe-sample",
+      "from": "observe",
+      "to": "sample",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "observe-validate",
+      "from": "sample",
+      "to": "validate",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "observe-snapshot",
+      "from": "validate",
+      "to": "snapshot",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "decide-aggregate",
+      "from": "decide",
+      "to": "aggregate",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "decide-history",
+      "from": "aggregate",
+      "to": "history",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "decide-recommend",
+      "from": "history",
+      "to": "recommend",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "actuate-guard",
+      "from": "actuate",
+      "to": "guard",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "actuate-manage",
+      "from": "guard",
+      "to": "manage",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "actuate-drain",
+      "from": "manage",
+      "to": "drain",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "verify-receipt",
+      "from": "verify",
+      "to": "receipt",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "verify-effect",
+      "from": "receipt",
+      "to": "effect",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "verify-feedback",
+      "from": "effect",
+      "to": "feedback",
+      "label": "",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "north",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "observe-decide",
+      "from": "observe",
+      "to": "decide",
+      "label": "指标快照",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "decide-actuate",
+      "from": "decide",
+      "to": "actuate",
+      "label": "容量建议",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "actuate-verify",
+      "from": "actuate",
+      "to": "verify",
+      "label": "操作身份",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "east",
+        "target_port": "west",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    },
+    {
+      "id": "closed-loop",
+      "from": "feedback",
+      "to": "snapshot",
+      "label": "下一轮重新采样；确认实际容量，不把目标数当 Ready 数",
+      "kind": "sync",
+      "style": {
+        "color": "#596153",
+        "width": 1.5,
+        "source_port": "south",
+        "target_port": "south",
+        "source_offset": 0.5,
+        "target_offset": 0.5,
+        "dashed": false
+      }
+    }
+  ]
+}
