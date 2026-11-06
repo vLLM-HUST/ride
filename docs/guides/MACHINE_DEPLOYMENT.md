@@ -2,7 +2,7 @@
 
 状态：2026-11-06，固定提交的双 devbox、双 TP1 功能链已完成 9 次真实生成，
 含请求等待/恢复、管理接管和停止隔离。冷启动使用 30ec6a4，管理重启入口使用
-3a4adde；随后合入上游 0.3.3 安全修复的开发版通过 101 项软件检查，尚未重新
+3a4adde；随后合入上游 0.3.3 安全修复的开发版通过 103 项软件检查，尚未重新
 执行 NPU 验收。短证据见[验证清单](../../evidence/machine-deployment-20261106/summary.json)。
 入口自身的 PASS 只表示部署就绪检查通过，不证明真实推理、Controller 动作或性能收益。
 本功能在 RIDE 实现；gennova-d 后续消费，不复制部署器。
@@ -66,7 +66,7 @@ runtime_env 必须注入凭据，操作环境也需设置同一 token 变量；�
 各节点安装固定 RIDE/Controller/引擎版本，或在相应 runtime_env 配置固定依赖。
 管理 Job 的 working_dir 由入口上传冻结配置；模型和 Controller 使用各自 runtime_env。
 管理 Job 必须固定节点，state_file 的父目录在该节点上预先存在且可持久写入。
-readiness_timeout_seconds 只控制运维就绪等待，不是推理业务 timeout。
+readiness_timeout_seconds 控制 Ray launcher 和各运维就绪阶段的期限；管理 API 探测也有有限期限，均不是推理业务 timeout。管理服务不可达时，status 仍返回持久操作记录和 UNKNOWN 观测，不把缺测显示成健康。
 
 对于新版独立请求包，使用其 `request-throttling-managed` 类型，并在 spec 指定
 `configuration`（所有执行节点及管理节点上相同的绝对路径）和

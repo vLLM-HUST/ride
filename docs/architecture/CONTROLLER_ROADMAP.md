@@ -20,7 +20,7 @@
 launcher 与公开 SDK。30ec6a4 冷启动两个 devbox/两个 TP1 vLLM 与请求 Controller，
 3a4adde 管理重启入口保留模型和已有 program，合计 9 次真实生成；7 个 Job 与
 两个临时工作区已归档清理。两个 devbox 同物理宿主，性能未运行。
-随后合入 498fa8b 的 0.3.3 安全修复，101 项软件及 CLI/构建检查通过；最新组合
+随后合入 498fa8b 的 0.3.3 安全修复，103 项软件及 CLI/构建检查通过；最新组合
 尚未重新上卡。见[验证清单](../../evidence/machine-deployment-20261106/summary.json)。
 GenNova 尚未消费该入口；单模型跨机器及跨物理主机另验。
 该项不改写下方已有 Controller 软件、功能和性能实验的状态。

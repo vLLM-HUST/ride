@@ -3,16 +3,18 @@
   "date": "2026-11-06",
   "status": "functional acceptance at fixed revisions; latest integration software only",
   "software": {
-    "revision": "c7ac35723a01616990a11eb1837e0dc44d85be36",
+    "revision": "364ab39caacc8b4ef731dc6158d07076e1f5acc4",
     "upstream_base": "498fa8b44a445b104c4a0f0eef96f206c4fd5722",
     "package_version": "0.3.3",
     "platform": "macOS arm64 Python3.12.14",
     "standard_check": {
-      "tests_passed": 101,
+      "tests_passed": 103,
       "failed": 0,
       "cli": "PASS",
       "installed_cli": "PASS",
-      "build": "PASS"
+      "build": "PASS",
+      "bootstrap_deadline": "PASS; timeout preserves UNKNOWN and prevents Job submission",
+      "offline_management_status": "PASS; durable UNKNOWN remains observable"
     },
     "request_controller_sdk_compatibility": {
       "source": "00f2f39",
@@ -98,6 +100,10 @@
     {
       "stage": "standard pytest collection",
       "reason": "Archived source copies were collected; testpaths now selects complete active tests directory"
+    },
+    {
+      "stage": "final operational regression",
+      "reason": "Default launcher had no finite operational timeout and offline management hid durable operations; both failure regressions now pass"
     }
   ],
   "cleanup": {
