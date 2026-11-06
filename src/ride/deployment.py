@@ -226,7 +226,10 @@ class Deployment:
                     raise ValueError('Ray cluster configuration changed after validation')
                 args = ['ray', 'up', '-y', '--no-restart', self.plan['ray']['cluster_config']]
                 self.journal.execute('bootstrap-ray', {'args': args}, lambda: self._bootstrap(args))
-            ray = self.ray()
+            # Ray start returning does not prove that the Jobs HTTP API is up.
+            # This is a read-only connection retry, never a Job submission retry.
+            ray = self.wait(lambda: {'client': self.ray()},
+                            lambda observed: 'client' in observed, 'Ray Jobs API')['client']
             submission = self.management_submission()
             result = self.journal.execute('start-management', submission,
                                           lambda: {'job_id': ray.submit_job(**submission)})

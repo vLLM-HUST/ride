@@ -96,6 +96,15 @@ file_mounts、setup_commands 和 Ray 启动命令。配置及依赖需固定，�
 Coder 的 SSH 代理、rsync、节点内部地址及工作区间连通性必须实际验证，不能因
 Coder terminal 可用就推断官方 launcher 可用。不适配时先修本入口，不用手工启动冒充一键成功。
 
+Ray 的最小安装可以启动节点，但不保证 Jobs API / Dashboard 存在。setup 必须
+安装固定版本的 `ray[default]`，例如本轮镜像使用 `ray[default]==2.48.0`，
+并验证 `ray.dashboard.modules.job.job_head` 可导入。head 启动显式启用
+Dashboard，传入 `--autoscaling-config=/absolute/path/ray_bootstrap_config.yaml`，
+否则不能据 head 启动推断 worker 已准备好。系统包在 venv 可导入不代表 venv/bin
+内有对应 console script；可用该解释器运行实际已验证的
+`python -m ray.scripts.scripts start ...`。入口还会只读等待 Jobs API，
+不能把这个等待理解为重新提交 Job。
+
 ## 准备固定源码包
 
 运行全套 Linux 检查时不能只拷贝 tests：现有测试还依赖 scripts 和验收配置。

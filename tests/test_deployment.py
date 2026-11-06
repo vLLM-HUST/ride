@@ -131,6 +131,20 @@ class DeploymentTests(unittest.TestCase):
         self.assertEqual(len(self.ray.submitted), 1)
         self.assertEqual(self.management.calls, [])
 
+    def test_ray_jobs_api_readiness_before_management_submission(self):
+        item = self.deployment()
+        attempts = []
+        def connect(address):
+            attempts.append(address)
+            if len(attempts) == 1:
+                self.assertEqual(self.ray.submitted, [])
+                raise ConnectionError('dashboard still starting')
+            return self.ray
+        item.ray_factory = connect
+        item.up(); item.close()
+        self.assertEqual(len(attempts), 2)
+        self.assertEqual(len(self.ray.submitted), 1)
+
     def test_wrong_management_identity_blocks_models(self):
         item = self.deployment()
         self.management.identity['workspace'] = 'foreign'
