@@ -9,7 +9,7 @@
 | 创建/更新 | 2026-11-06 |
 | 影响仓库 | instance-controller、request-throttling-controller；复用ride与kv-controller接口 |
 | 关联 | [长期规划](../PROJECT_PLAN.md)、[统一设计](../architecture/INDEPENDENT_CONTROLLERS.md)、[效果契约](../architecture/CONTROLLER_EVALUATION.md)、[路线图](../architecture/CONTROLLER_ROADMAP.md) |
-| 实现状态 | 本RFC的新观测和策略尚未实现或验证；现有能力不代表本设计已验收 |
+| 实现状态 | 在线v1观测与反应式策略已实现并通过软件/安装契约；真实镜像、标定、NPU及收益未验收，启动前瞻未接入 |
 
 ## 1. 问题与目标
 
@@ -140,7 +140,7 @@
 
 <a id="53-公共策略契约拟议尚未实现"></a>
 
-### 2.3 公共策略契约（拟议，尚未实现）
+### 2.3 公共策略契约（在线v1软件已实现，通用协议待扩展）
 
 
 每个实例池通过配置选择一个本地安装、固定版本的策略。策略可以由独立Python包提供，但由同一个Instance Controller进程调用；不为每个算法再启动一套执行服务，不自动下载插件。公共循环通过适配器读公开数据，不import其他Controller或训练系统的内部实现。
@@ -268,13 +268,27 @@ RIDE只管理已有归属对象。平台资源另按每轮准确授权/模板/�
 
 诊断输出应保留“证据→候选原因→反证/未知→下一项检查”，不把规则命中数叫因果概率。确认根因需要相同请求/任务的阶段证据、版本/配置对照或有控制的干预；仅相关性和扩容后数值回落都不足以排除其他同时变化。
 
+在线v1当前落地口径如下；这张表是代码契约，不是实机能力通过记录。源码与版本以统一路线图为准。
+
+| 字段/能力 | 当前实现来源与聚合 | 时间、单位和缺测限制 |
+|---|---|---|
+| 完整prompt预算B | Request以原生`/tokenize`计数；单序列文本流式chat进入后计入，首有效生成后移出 | token；采集期间/失败/不支持事件为null；实际模板/计数等价待09；显式模板与special-token参数随请求传递 |
+| 到达累计量 | 同一Request进程的accepted_prompt_tokens_total＋counter_epoch；Instance窗口差分 | token与token/s；缺token重置epoch，不补零；不是完成吞吐 |
+| 首有效输出与decode计数 | 原始SSE流旁路观测content、reasoning/reasoning_content、函数名/参数片段 | 空delta/角色/心跳不计；仅跟踪阶段，不能推导真实剩余decode工作量；转发字节保持 |
+| 等待数/最老等待 | Request成员等待门禁的本地单调时钟 | 个/秒；范围controller_queue，不代表原调度器或引擎全队列，不能据此定位全部等待 |
+| 实例KV使用率 | 对准确active/draining成员抓取原始Prometheus单序列kv_cache_usage_perc或旧gpu_cache_usage_perc | [0,1]；缺失/多rank/别名歧义为null，尚未验证实际HELP/TYPE；不擅自求平均 |
+| owner/实例/Job/阶段 | Request版本化成员API＋RIDE准确Job就绪状态分别核对 | serving且Ready/RUNNING才可服务；starting占预约；跨服务不是原子快照 |
+| TTFT/TPOT/池级分位 | 已有同窗口同bucket直方图合并纯函数 | 实际时延采集适配尚未接入；没有原始同口径分布就不提供池级p95或SLO结论 |
+
+采样HTTP有独立有限管理时限及响应体积上限，业务请求仍无限等待。tokenization位于观测启用后的转发前，会增加开销；所有正式对照共同开启，并在09单独测量。Request响应usage与计数不一致会持续禁用工作量观测，查明原因并重新验收后才恢复，不能自动容忍偏差。反应式暂只消费B与KV；其他字段支持后续校准/诊断，不冒充已启用预测。
+
 <a id="先做什么如何验收"></a>
 
 #### 3.2.4 先做什么，如何验收
 
 第一阶段仍只做在线Instance：核实际镜像暴露的metrics及语义，产出版本化映射与最小观测能力，再实现聚合/窗口和只记录建议。与现有计数基线共同采集，核已有行为不变、缺测/重置/乱序/重复rank/不同bucket被正确处理。能准确重现一个“哪里在等待”的小闭环后，才允许新策略执行扩缩和完整效果对照。
 
-策略必需输入不全则拒绝启用该策略；TTFT等诊断或验收指标缺失时，不能作相应SLO/根因结论，但不凭空把所有可选指标变成计数策略的新前置条件。后续更强模型可借鉴Dynamo的逐迭代FPM，当前不承诺该采集与预测链路已具备。本文新增的指标映射、诊断与验证要求均待实现/实测，不由设计表核销。
+策略必需输入不全则拒绝启用该策略；TTFT等诊断或验收指标缺失时，不能作相应SLO/根因结论，但不凭空把所有可选指标变成计数策略的新前置条件。后续更强模型可借鉴Dynamo的逐迭代FPM，当前不承诺该采集与预测链路已具备。在线v1已实现token/阶段/KV的最小采集和缺测处理；真实镜像对账、时延诊断及验证要求仍待实测，不由设计表核销。
 
 ### 3.3 容量建模与工作量反应式
 
@@ -696,7 +710,7 @@ llm-d来源固定为343d9be9813020f43aeb5a5b97cb459102bb5893，[许可证为Apac
 ### A.2 在线推理观察适配器：新增只读接口（拟议，当前不存在）
 
 
-下面的`instance-controller.workload/v1`仅服务于首个在线策略，不是所有场景的公共观测schema。RL数据不会塞进此接口。建议限流层新增经现有peer token认证的`GET /control/workload`，并在capabilities声明`workload_observation_v1=true`。默认计数策略仍可接旧服务；选择工作量策略但缺能力时必须拒绝自动启用，不静默降级后仍按工作量策略记账。
+下面的`instance-controller.workload/v1`仅服务于首个在线策略，不是所有场景的公共观测schema。RL数据不会塞进此接口。限流层已实现显式启用、经现有peer token认证的`GET /control/workload`，并在capabilities声明`workload_observation_v1=true`。默认计数策略仍可接旧服务；选择工作量策略但缺能力时必须拒绝自动启用，不静默降级后仍按工作量策略记账。
 
 该接口仅暴露本池聚合及准确成员身份，不暴露prompt、token IDs或生成文本。响应拟包含：
 
@@ -710,7 +724,7 @@ llm-d来源固定为343d9be9813020f43aeb5a5b97cb459102bb5893，[许可证为Apac
 | `token_observation_status` | `complete`或`unavailable` | 不可用时token量为null，绝不填0 |
 | `prefill_budget_tokens` | 非负整数或null | 已接收且尚未观察到首个有效输出token的完整输入token预算 |
 | `waiting_requests`, `decode_requests`, `unknown_requests` | 非负整数 | 本次采样的对应请求数，阶段定义固定 |
-| `oldest_wait_seconds`, `waiting_observation_scope` | 非负秒或null、枚举 | 最老可追踪排队年龄及其范围；v1范围为限流层本地队列，不充引擎全队列，不以HTTP总时长代替 |
+| `oldest_wait_seconds`, `waiting_observation_scope` | 非负秒或null、枚举 | 最老可追踪排队年龄及其范围；当前`controller_queue`仅覆盖成员等待门禁，未覆盖原调度器内部等待或引擎队列，不以HTTP总时长代替 |
 | `replicas` | 列表 | 每成员name、job_id、phase、sampled_at和可空的`kv_cache_usage_fraction` |
 | `accepted_prompt_tokens_total`, `counter_epoch` | 累计整数、字符串 | 已接收工作量的输入计数及重置世代，预测到达速率用，不以已完成吞吐代替 |
 
