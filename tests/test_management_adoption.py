@@ -26,8 +26,8 @@ class AdoptionTests(unittest.TestCase):
         temporary=tempfile.TemporaryDirectory();self.addCleanup(temporary.cleanup)
         self.root=Path(temporary.name)
         self.command='python -m ride start --config /owned/config.json'
-        (self.root/'management-submission.json').write_text(json.dumps({'job_id':'owned-management','entrypoint':self.command}))
-        self.plan={'address':'http://ride','management_job_id':'owned-management',
+        (self.root/'management-submission.json').write_text(json.dumps({'job_id':'myc-ride-control-plane-execution-1','entrypoint':self.command}))
+        self.plan={'address':'http://ride','management_job_id':'myc-ride-control-plane-execution-1',
             'deployment_output':str(self.root),'runtime_env':{},'timeout':1}
         self.before={'management_pid':1,'run_id':'same','controllers':[
             {'id':'controller','job_id':'controller-job','job_status':'RUNNING','ready':True}],
@@ -40,7 +40,7 @@ class AdoptionTests(unittest.TestCase):
             def call(self,path,body=None):
                 outer.calls.append((path,body))
                 if path.endswith('/stop'):outer.stopped=True;return {'stopped':True}
-                return {'entrypoint':outer.command,'status':'STOPPED' if path.endswith('/owned-management') and outer.stopped else 'RUNNING'}
+                return {'entrypoint':outer.command,'status':'STOPPED' if path.endswith('/myc-ride-control-plane-execution-1') and outer.stopped else 'RUNNING'}
             def submit_job(self,**kwargs):outer.submissions.append(kwargs);return {'job_id':kwargs['submission_id']}
         self.client=Jobs();self.scenarios=module('acceptance_scenarios')
 
@@ -57,10 +57,12 @@ class AdoptionTests(unittest.TestCase):
         for row in self.before['model_services']+self.after['model_services']:
             row.update(job_status='RUNNING',ready=True)
         def wait(path):
-            self.assertEqual(self.plan['management_job_id'],'owned-management-adopt')
+            self.assertEqual(self.plan['management_job_id'],'myc-ride-control-plane-execution-2')
             return copy.deepcopy(self.after)
         self.invoke(wait)
         self.assertEqual(len(self.submissions),1)
+        self.assertEqual(self.submissions[0]['metadata']['job_name'],'RIDE Control Plane')
+        self.assertEqual(self.submissions[0]['metadata']['ride.execution'],'2')
 
     def test_stopped_model_does_not_need_to_become_ready(self):
         result=self.invoke()
@@ -109,9 +111,9 @@ class AdoptionEntryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root=Path(directory);plan=root/'plan.json';out=root/'evidence'
             plan.write_text(json.dumps({'ray_address':'http://ray','address':'http://ride',
-                'management_job_id':'owned-management'}))
+                'management_job_id':'myc-ride-control-plane-execution-1'}))
             snapshot={'controllers':[],'model_services':[]}
-            fake_adoption=lambda plan,client,wait:{'management_job':'owned-management-adopt'}
+            fake_adoption=lambda plan,client,wait:{'management_job':'myc-ride-control-plane-execution-2'}
             with patch.dict(sys.modules,{'ride.__main__':types.SimpleNamespace(request=lambda *a,**k:snapshot),
                     'deployment_identity':types.SimpleNamespace(verify_live=lambda p:{'verified':True}),
                     'acceptance_scenarios':types.SimpleNamespace(adoption=fake_adoption)}), \

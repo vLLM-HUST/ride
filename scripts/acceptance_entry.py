@@ -8,6 +8,7 @@ import shlex
 import time
 from urllib.request import Request, urlopen
 from pathlib import Path
+from ride.job_submission import job_metadata, ray_entrypoint
 
 
 def main():
@@ -53,8 +54,12 @@ def main():
                     management = client.call('/api/jobs/' + plan['management_job_id'])
                     if management.get('status') in ('FAILED', 'STOPPED', 'SUCCEEDED'):
                         raise RuntimeError('Management Job terminated before readiness: ' + management['status'])
+                    if not management.get('job_id'):
+                        time.sleep(2)
+                        continue
                 record = request(plan['address'], path)
-                if path == 'status' or record.get('ready') is True:
+                if path == 'status' or (record.get('ready') is True and
+                        (record.get('executor') != 'ray' or record.get('ray_job_id'))):
                     return record
                 if record.get('job_status') in ('FAILED', 'STOPPED', 'SUCCEEDED'):
                     raise RuntimeError('Service terminated: ' + json.dumps(record))
@@ -97,10 +102,11 @@ def main():
             config = json.loads(Path(plan['config']).read_text())
             if any(s.get('autostart') for k in ('model_services', 'controllers') for s in config.get(k, [])):
                 raise ValueError('Use autostart=false: models must be Ready before Controllers')
-            command = 'python -m ride start --config ' + shlex.quote(plan.get('management_config', str(Path(plan['config']).resolve()))) + ' --listen ' + shlex.quote(plan['listen'])
+            command = ray_entrypoint('python -m ride start --config ' + shlex.quote(plan.get('management_config', str(Path(plan['config']).resolve()))) + ' --listen ' + shlex.quote(plan['listen']), 'RIDE Control Plane')
             def submit():
                 receipt.write_text(json.dumps({'job_id': identifier, 'entrypoint': command, 'status': 'SUBMISSION_INTENT'}))
                 return client.submit_job(submission_id=identifier, entrypoint=command,
+                    metadata=job_metadata('RIDE Control Plane', 'ride-control-plane', plan.get('run_id', config.get('workspace', '')), 1),
                     runtime_env=plan.get('runtime_env', {}), entrypoint_num_cpus=0.1, entrypoint_resources=plan.get('management_resources', {}))
             action('management', 'One explicitly named management Job submitted', submit)
             action('management_ready', 'RIDE API available', lambda: wait('status'))

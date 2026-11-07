@@ -4,7 +4,7 @@
 
 目标是让开发者实现自己的 Controller，然后用统一命令将独立进程部署到已有 Ray。
 RIDE 是控制平面；Controller 是策略与服务实现；Ray 是进程执行底座。
-本指南对应SDK 0.3.2、协议版本1。接口说明见[公共SDK](SDK.md)，当前实机及未验收范围见[跨仓库路线图](../architecture/CONTROLLER_ROADMAP.md)。不把协议版本、插件发现或健康检查当作策略正确性证明。
+本指南对应SDK 0.3.5源码、协议版本1；新版本真实Ray/NPU验收仍须核路线图。接口说明见[公共SDK](SDK.md)，当前实机及未验收范围见[跨仓库路线图](../architecture/CONTROLLER_ROADMAP.md)。不把协议版本、插件发现或健康检查当作策略正确性证明。
 
 ## 1. 系统责任与运行路径
 
@@ -91,6 +91,10 @@ ride logs controller <实例名称>
 ride stop controller <实例名称>
 ride start controller <实例名称>
 ```
+
+组件显示名使用 `display_name`，例如 `Instance Autoscaling Controller`；实例标识使用 `instance-autoscaling-controller`。工作区范围放在部署配置中，不把日期、端口或随机字符串塞进显示名。同一组件恢复后名称不变，新的 Ray Submission ID 以 `execution-2` 明确执行次数。
+
+Ray 部署会通过 `python -m ride.ray_job` 注册原生 driver，再运行适配器产生的前台命令。Controller 包仍可独立运行；local 部署不经过此入口。状态中的 `submission_id` 用于 Ray Jobs 查询/停止，`ray_job_id` 用于关联 Ray Core；历史字段 `job_id` 保留 Submission ID 的兼容语义。原生 ID 尚未产生或读取失败时不伪造值。普通 HTTP 服务没有自动产生业务 Ray Actors/Tasks，不能把 JobSupervisor 当作 Controller 的业务 Actor。
 
 类型描述实现，名称描述运行实例。同名配置冲突会拒绝，修改配置需使用新实例名。
 Controller 包必须可从 Ray 执行环境导入；可预装到执行节点，或提供 `--runtime-env`。

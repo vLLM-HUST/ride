@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
 from .registry import command, controller_adapter
+from .job_submission import component_name, job_metadata, ray_entrypoint
 
 _UNCONDITIONAL = object()
 
@@ -51,6 +52,7 @@ class Runtime:
         self.state.setdefault('specs', {'controllers': {}, 'model_services': {}})
         self.state.setdefault('submitted_specs', {})
         self.state.setdefault('start_operations', {})
+        self.state.setdefault('executions', {})
         for kind in ('controllers', 'model_services'):
             self.state['specs'].setdefault(kind, {})
             for spec in config.get(kind, []):
@@ -134,6 +136,12 @@ class Runtime:
             prefix = spec.get('job_name_prefix')
             if 'job_name_prefix' in spec and (not isinstance(prefix, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,79}', prefix)):
                 raise ValueError('Invalid Ray Job name prefix')
+            if prefix:
+                for other_kind, specifications in self.state['specs'].items():
+                    for other_identifier, other_spec in specifications.items():
+                        if ((other_kind, other_identifier) != (kind, identifier)
+                                and other_spec.get('job_name_prefix') == prefix):
+                            raise ValueError('Each component requires a distinct job_name_prefix')
             if spec.get('executor', self.executor) != self.executor:
                 raise ValueError('Instance executor must match management deployment')
             if self.executor == 'local':
@@ -145,7 +153,8 @@ class Runtime:
                     raise ValueError('Local runtime_env supports env_vars only')
             if old and changes and spec != old:
                 raise ValueError('Instance configuration conflict; use a different instance name')
-            cmd = command(kind, spec)
+            component_command = command(kind, spec)
+            display_name = component_name(kind, spec)
             key = self.key(kind, identifier)
             prior = self.state['jobs'].get(key)
             if prior:
@@ -166,18 +175,28 @@ class Runtime:
                     raise ValueError('Controller backend does not match model service')
             if start_deadline is not None and datetime.now(timezone.utc) >= start_deadline:
                 raise ValueError('Model start deadline expired; no new Job submitted')
+            execution = self.state['executions'].get(key, 0) + 1
+            workspace = self.config.get('workspace', self.state['run_id'])
+            if not prefix:
+                if not isinstance(workspace, str) or not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9_.-]{0,127}', workspace):
+                    raise ValueError('Set an explicit job_name_prefix for a workspace without a portable identifier')
+                prefix = workspace + '-' + ('controller' if kind == 'controllers' else 'model-service') + '-' + identifier
+            submission_id = prefix + '-execution-' + str(execution)
+            if len(submission_id) > 200:
+                raise ValueError('Submission identity too long; configure a shorter job_name_prefix')
             self.state['specs'][kind][identifier] = spec
-            job_id = 'ride-' + ('controller-' if kind == 'controllers' else 'model-') + self.state['run_id'] + '-' + uuid.uuid4().hex[:8]
-            if prefix:
-                job_id = prefix + '-' + uuid.uuid4().hex[:12]
-            self.state['jobs'][key] = job_id
+            self.state['executions'][key] = execution
+            self.state['jobs'][key] = submission_id
             self.state['submitted_specs'][key] = copy.deepcopy(spec)
             if conditional:
-                self.state['start_operations'][operation_id]=dict(request=requested,status='UNKNOWN',job_id=job_id,
+                self.state['start_operations'][operation_id]=dict(request=requested,status='UNKNOWN',job_id=submission_id,
                     kind=kind,identifier=identifier)
-            self.operation('start-intent', key, job_id)
-            kwargs = dict(submission_id=job_id, entrypoint=cmd,
+            self.operation('start-intent', key, submission_id)
+            kwargs = dict(submission_id=submission_id, entrypoint=component_command,
                 runtime_env=spec.get('runtime_env', {}), entrypoint_resources=spec.get('resources', {}))
+            if self.executor == 'ray':
+                kwargs.update(entrypoint=ray_entrypoint(component_command, display_name),
+                              metadata=job_metadata(display_name, identifier, workspace, execution))
             for option, field in [('entrypoint_num_cpus', 'num_cpus'), ('entrypoint_num_gpus', 'num_gpus')]:
                 if field in spec: kwargs[option] = spec[field]
             try:
@@ -186,7 +205,7 @@ class Runtime:
                 self.operation('start', key, 'UNKNOWN_OUTCOME')
                 raise
             self.operation('start', key, 'SUBMITTED')
-            result={'job_id': job_id, 'id': identifier, 'endpoint': spec['endpoint']}
+            result={'job_id': submission_id, 'id': identifier, 'endpoint': spec['endpoint']}
             if conditional:
                 self.state['start_operations'][operation_id].update(status='COMPLETED',result=result)
                 self.save()
@@ -199,13 +218,13 @@ class Runtime:
     def stop(self, identifier, *, expected_job_id=_UNCONDITIONAL):
         with self.lock:
             self._ensure_open()
-            job_id = self.state['jobs'].get(identifier)
-            if not job_id: raise ValueError('No owned job for instance')
-            if expected_job_id is not _UNCONDITIONAL and (not isinstance(expected_job_id,str) or not expected_job_id or job_id!=expected_job_id):
+            submission_id = self.state['jobs'].get(identifier)
+            if not submission_id: raise ValueError('No owned job for instance')
+            if expected_job_id is not _UNCONDITIONAL and (not isinstance(expected_job_id,str) or not expected_job_id or submission_id!=expected_job_id):
                 raise ValueError('Stop precondition Job identity changed')
-            result = self.client.stop_job(job_id)
+            result = self.client.stop_job(submission_id)
             self.operation('stop', identifier, str(result))
-            return {'job_id': job_id, 'stop_requested': result}
+            return {'job_id': submission_id, 'stop_requested': result}
 
     def stop_instance(self, kind, identifier, *, expected_job_id=_UNCONDITIONAL):
         return self.stop(self.key(kind, identifier),expected_job_id=expected_job_id)
@@ -219,9 +238,9 @@ class Runtime:
     def logs(self, kind, identifier):
         key = self.key(kind, identifier)
         with self.lock:
-            job_id = self.state['jobs'].get(key)
-            if not job_id: raise ValueError('No owned job for instance')
-        return {'job_id': job_id, 'logs': self.client.get_job_logs(job_id)}
+            submission_id = self.state['jobs'].get(key)
+            if not submission_id: raise ValueError('No owned job for instance')
+        return {'job_id': submission_id, 'logs': self.client.get_job_logs(submission_id)}
 
     @staticmethod
     def health(endpoint):
@@ -235,12 +254,23 @@ class Runtime:
         with self.lock:
             spec = copy.deepcopy(self.state['specs'][kind].get(identifier))
             if not spec: raise ValueError('Unknown instance')
-            job_id = self.state['jobs'].get(self.key(kind, identifier))
+            submission_id = self.state['jobs'].get(self.key(kind, identifier))
         record = {'id': identifier, 'type': spec.get('type', spec.get('entrypoint')), 'kind': kind,
-            'executor': self.executor, 'endpoint': spec['endpoint'], 'job_id': job_id, 'job_status': 'NOT_STARTED', 'ready': False}
-        if job_id:
-            try: record['job_status'] = self.client.get_job_status(job_id).value
+            'executor': self.executor, 'endpoint': spec['endpoint'], 'job_id': submission_id, 'job_status': 'NOT_STARTED', 'ready': False}
+        # job_id is the historical RIDE lifecycle token (a submission ID).
+        # Keep it for existing Controller CAS protocols; never label it native.
+        record.update(display_name=component_name(kind, spec),
+                      submission_id=submission_id if self.executor == 'ray' else None,
+                      ray_job_id=None)
+        if submission_id:
+            try: record['job_status'] = self.client.get_job_status(submission_id).value
             except Exception as error: record['job_status'] = 'UNKNOWN'; record['job_error'] = type(error).__name__
+            if self.executor == 'ray' and hasattr(self.client, 'get_job_info'):
+                try:
+                    information = self.client.get_job_info(submission_id)
+                    record['ray_job_id'] = information.job_id
+                except Exception as error:
+                    record['ray_identity_error'] = type(error).__name__
         if kind == 'model_services':
             record['model'] = spec['model']
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'

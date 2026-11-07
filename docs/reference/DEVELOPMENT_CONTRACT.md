@@ -91,3 +91,16 @@ Review 重点：责任边界是否正确；工作区和集群创建是否符合�
 新增环境能力先写失败回归，再实现。测试通过配置或外部传输边界注入环境，至少覆盖不同端点/命名空间/存储根及错误身份、缺能力、越界路径、符号链接和未知结果；不改被测实现来通过，不给mock添加现场不存在的字段。配置及身份错误在副作用前拒绝，不能静默换后端或降低校验。
 
 部署前先备齐材料与依赖，再冻结并执行，避免准备耗时耗尽创建/启动窗口。已冻结运行不热改，必要修复使用新版本/新run且保留失败。软件检查、实际环境资格、真实动作及收益分开核销。临时实验清单允许冻结具体环境值，可执行流程应保持复用；不能把私有脚本当成生产接入完成。
+
+
+## 7. 组件命名与 Ray 身份（2026-11-07 用户纠正）
+
+工程师必须能直接辨认系统组件。组件用全名和稳定的实例标识；恢复、接管、校准等是操作或验证用途，不成为新组件名称。不使用随机后缀表达重启。内部幂等令牌、配置哈希与历史原件保持其本来含义。
+
+- 组件名称：RIDE Control Plane、Request Throttling Controller、Key Value Cache Controller、Instance Autoscaling Controller、Inference Model Replica 1 / 2。第三方组件可通过 `display_name` 配置自己的完整名称。
+- 组件实例标识独立于执行身份；同一工作区内保持不变。Ray Submission ID 使用明确的工作区范围、完整组件标识和 `execution-1` / `execution-2`；执行序号在提交意图前持久化，幂等重放不增加序号。未知提交结果不盲重投。
+- Ray 原生 Job ID 由 Ray driver 注册后产生，不能用 Submission ID 代替。RIDE 状态分别给出 `submission_id`、`ray_job_id`；旧 `job_id` 仅为现有生命周期协议的 Submission ID 兼容字段，不擅自改变 CAS 含义。
+- Ray 部署由 RIDE 的统一执行入口连接既有 Ray，再运行前台组件；连接失败不启动组件，不创建私有 Ray，不分离子进程、不额外预留资源。独立 Controller 不需要 import Ray；local 模式不增加 Ray 依赖。
+- 组件类型和协议 role 的历史值（如 `kv-control`、`instance`）是兼容协议标识，不作为面向工程师的显示名。新实验与收尾从冻结配置读取身份，不从短名或最近作业猜测归属。
+
+验收必须覆盖原生 Job ID 与 Submission ID 的关联、完整名称、重启序号、日志、失败退出、停止后子进程消失及其他组件继续服务。软件测试不替代真实 Ray 与 NPU 验收。Ray 2.48 Jobs 列表直接显示 Job ID 和 Submission ID，不显示组件 metadata 中的名称；因此提交身份也必须可读。

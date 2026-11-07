@@ -8,6 +8,7 @@ import time
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError
 from pathlib import Path
+from ride.job_submission import job_metadata, next_execution_submission_id
 
 
 def http(url, body=None):
@@ -130,7 +131,7 @@ def adoption(plan, client, wait):
     assert info['entrypoint']==receipt['entrypoint'],'Management ownership mismatch'
     assert info.get('status')=='RUNNING','Management Job must be running before adoption'
     assert plan['management_job_id']==identifier,'Management binding differs from submission receipt'
-    new=identifier+'-adopt'
+    new=next_execution_submission_id(identifier)
     if plan.get('adoption_job_id',new)!=new:raise ValueError('Frozen adoption Job identity differs')
     stop_intent.write_text(json.dumps({'job_id':identifier,'entrypoint':receipt['entrypoint']}))
     response=client.call('/api/jobs/'+identifier+'/stop',{})
@@ -140,7 +141,9 @@ def adoption(plan, client, wait):
         time.sleep(1)
     if restart_delay:time.sleep(restart_delay)
     intent.write_text(json.dumps({'job_id':new,'entrypoint':receipt['entrypoint']}))
-    client.submit_job(submission_id=new,entrypoint=receipt['entrypoint'],runtime_env=plan['runtime_env'],entrypoint_num_cpus=.1,entrypoint_resources=plan.get('management_resources',{}))
+    metadata=job_metadata('RIDE Control Plane','ride-control-plane',plan.get('run_id',''),int(new.rsplit('-execution-',1)[1]))
+    metadata['ride.restart_reason']='management recovery validation'
+    client.submit_job(submission_id=new,entrypoint=receipt['entrypoint'],metadata=metadata,runtime_env=plan['runtime_env'],entrypoint_num_cpus=.1,entrypoint_resources=plan.get('management_resources',{}))
     # Execution binding only: the frozen input file remains unchanged. The
     # readiness guard must inspect the replacement, not the intentionally stopped Job.
     plan['management_job_id']=new

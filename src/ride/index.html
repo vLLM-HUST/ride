@@ -9,7 +9,36 @@
 const el=id=>document.getElementById(id);const append=(root,tag,text,cls)=>{const n=document.createElement(tag);n.textContent=text;if(cls)n.className=cls;root.append(n);return n};
 async function action(kind,id,verb,body={}){el('message').textContent='正在提交操作…';try{const r=await fetch('api/v1/'+kind+'/'+encodeURIComponent(id)+'/'+verb,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const v=await r.json();if(!r.ok)throw Error(v.error||'HTTP '+r.status);el('message').textContent=(verb==='start'?'已提交启动':'已请求停止')+'，实际状态以就绪检查为准。';await refresh()}catch(e){el('message').textContent='操作失败：'+e.message}}
 async function logs(kind,id){try{const r=await fetch('api/v1/'+kind+'/'+encodeURIComponent(id)+'/logs');const v=await r.json();if(!r.ok)throw Error(v.error);el('logs').textContent=id+'\n'+v.logs}catch(e){el('logs').textContent='日志不可用：'+e.message}}
-function render(root,records,kind){root.replaceChildren();if(!records.length)append(root,'p','尚未登记实例。','muted');for(const c of records){const a=append(root,'article','');append(a,'h3',c.id+' · '+c.type);append(a,'p',c.ready?'已就绪':c.job_status==='RUNNING'?'运行中 · 尚未就绪':c.job_status,c.ready?'success':'warning');append(a,'p','服务地址：'+c.endpoint);if(c.backend)append(a,'p','模型后端：'+c.backend);if(c.model)append(a,'p','模型：'+c.model);append(a,'p','Ray Job：'+(c.job_id||'未提交'),'muted');if(c.identity)append(a,'p','实际实现：'+c.identity.router_class+' · 调度：'+(c.identity.scheduling_enabled?'已启用':'未启用'));for(const verb of ['start','stop']){const b=append(a,'button',verb==='start'?'启动':'停止');b.disabled=verb==='start'?['RUNNING','PENDING'].includes(c.job_status):!['RUNNING','PENDING'].includes(c.job_status);b.onclick=()=>action(kind,c.id,verb)}const b=append(a,'button','查看日志');b.onclick=()=>logs(kind,c.id)}}
+function render(root, records, componentKind) {
+  root.replaceChildren();
+  if (!records.length) append(root, 'p', '尚未登记实例。', 'muted');
+  for (const component of records) {
+    const article = append(root, 'article', '');
+    append(article, 'h3', component.display_name || component.id);
+    append(article, 'p', '组件标识：' + component.id, 'muted');
+    const status = component.ready ? '已就绪' : component.job_status === 'RUNNING' ? '运行中 · 尚未就绪' : component.job_status;
+    append(article, 'p', status, component.ready ? 'success' : 'warning');
+    append(article, 'p', '服务地址：' + component.endpoint);
+    if (component.backend) append(article, 'p', '模型后端：' + component.backend);
+    if (component.model) append(article, 'p', '模型：' + component.model);
+    if (component.executor === 'local') {
+      append(article, 'p', '本地进程标识：' + (component.job_id || '未启动'), 'muted');
+    } else {
+      append(article, 'p', 'Ray Submission ID：' + (component.submission_id || '未提交'), 'muted');
+      const driverStatus = component.ray_identity_error ? '读取失败：' + component.ray_identity_error : '尚未注册 driver';
+      append(article, 'p', 'Ray Job ID：' + (component.ray_job_id || driverStatus), 'muted');
+    }
+    if (component.identity) append(article, 'p', '实际实现：' + component.identity.router_class + ' · 调度：' + (component.identity.scheduling_enabled ? '已启用' : '未启用'));
+    for (const operation of ['start', 'stop']) {
+      const button = append(article, 'button', operation === 'start' ? '启动' : '停止');
+      const running = ['RUNNING', 'PENDING'].includes(component.job_status);
+      button.disabled = operation === 'start' ? running : !running;
+      button.onclick = () => action(componentKind, component.id, operation);
+    }
+    const logsButton = append(article, 'button', '查看日志');
+    logsButton.onclick = () => logs(componentKind, component.id);
+  }
+}
 async function refresh(){try{const r=await fetch('api/v1/status',{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);const s=await r.json();el('timestamp').textContent='更新于 '+new Date(s.observed_at).toLocaleString();el('workspace').textContent='所属工作区：'+s.workspace;render(el('models'),s.model_services||[],'model-services');render(el('controllers'),s.controllers||[],'controllers');el('operations').replaceChildren();for(const op of (s.operations||[]).slice().reverse()){const row=append(el('operations'),'tr','');for(const t of [new Date(op.at).toLocaleTimeString(),op.target,op.action,op.result])append(row,'td',t)}el('status').textContent=JSON.stringify(s,null,2)}catch(e){el('message').textContent='状态不可用：'+e.message;el('models').replaceChildren();el('controllers').replaceChildren()}}
 el('create').onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target));const body={type:v.kind==='controllers'?'request-throttling':'vllm',endpoint:v.endpoint,port:Number(v.port)};if(v.kind==='controllers'){body.backend=v.backend;body.listen='0.0.0.0:'+v.port}else body.model=v.model;action(v.kind,v.name,'start',body)};el('refresh').onclick=refresh;refresh();setInterval(refresh,5000);
 </script></html>
