@@ -116,18 +116,19 @@ class JobIdentityTests(unittest.TestCase):
         from ride.ray_job import run
         ray = Mock()
         ray.get_runtime_context.return_value.get_job_id.return_value = '02000000'
-        child = Mock(return_value=SimpleNamespace(returncode=7))
-        with patch('ride.ray_job.subprocess.run', child), patch.dict('os.environ', {'RAY_ADDRESS': '10.0.0.1:6379'}):
+        process = Mock(); process.pid = 123; process.wait.return_value = 7; process.poll.return_value = 7
+        child = Mock(return_value=process)
+        with patch('ride.ray_job.subprocess.Popen', child), patch.dict('os.environ', {'RAY_ADDRESS': '10.0.0.1:6379'}):
             self.assertEqual(run(['python', '-V'], 'Instance Autoscaling Controller', ray_module=ray), 7)
         ray.init.assert_called_once_with(address='10.0.0.1:6379')
-        child.assert_called_once_with(['python', '-V'], check=False)
+        child.assert_called_once_with(['python', '-V'])
         ray.shutdown.assert_called_once()
 
     def test_driver_connection_failure_never_starts_unmanaged_child(self):
         from ride.ray_job import run
         ray = Mock()
         ray.init.side_effect = RuntimeError('connection failed')
-        with patch('ride.ray_job.subprocess.run') as child:
+        with patch('ride.ray_job.subprocess.Popen') as child:
             with self.assertRaises(RuntimeError):
                 run(['python', '-V'], 'RIDE Control Plane', ray_module=ray)
             child.assert_not_called()
@@ -136,7 +137,41 @@ class JobIdentityTests(unittest.TestCase):
         from ride.ray_job import run
         ray = Mock()
         ray.get_runtime_context.return_value.get_job_id.return_value = '02000000'
-        with patch('ride.ray_job.subprocess.run', side_effect=FileNotFoundError):
+        with patch('ride.ray_job.subprocess.Popen', side_effect=FileNotFoundError):
             with self.assertRaises(FileNotFoundError):
                 run(['missing-command'], 'RIDE Control Plane', ray_module=ray)
         ray.shutdown.assert_called_once()
+
+
+class RealSignalTests(unittest.TestCase):
+    def test_group_termination_is_forwarded_and_child_is_reaped(self):
+        import os
+        import signal
+        import subprocess
+        import sys
+        import time
+        child_code = 'import os,time; print("CHILD_PID="+str(os.getpid()), flush=True); time.sleep(60)'
+        driver_code = ('from types import SimpleNamespace; from ride.ray_job import run; '
+                       'ray=SimpleNamespace(init=lambda **k:None,shutdown=lambda:None,'
+                       'get_runtime_context=lambda:SimpleNamespace(get_job_id=lambda:"fixture")); '
+                       'raise SystemExit(run(' + repr([sys.executable, '-u', '-c', child_code]) + ', "Signal Test", ray_module=ray))')
+        process = subprocess.Popen([sys.executable, '-u', '-c', driver_code],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, start_new_session=True)
+        child_pid = None
+        try:
+            line = ''
+            for _ in range(4):
+                line = process.stdout.readline()
+                if line.startswith('CHILD_PID='):break
+            self.assertTrue(line.startswith('CHILD_PID='), line)
+            child_pid = int(line.split('=')[1])
+            os.killpg(process.pid, signal.SIGTERM)
+            self.assertEqual(process.wait(timeout=5), 143)
+            with self.assertRaises(ProcessLookupError):
+                os.kill(child_pid, 0)
+        finally:
+            if process.poll() is None:
+                os.killpg(process.pid, signal.SIGKILL)
+                process.wait(timeout=5)
+            process.stdout.close(); process.stderr.close()

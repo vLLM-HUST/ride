@@ -4,7 +4,7 @@
 
 目标是让开发者实现自己的 Controller，然后用统一命令将独立进程部署到已有 Ray。
 RIDE 是控制平面；Controller 是策略与服务实现；Ray 是进程执行底座。
-本指南对应SDK 0.3.5源码、协议版本1；新版本真实Ray/NPU验收仍须核路线图。接口说明见[公共SDK](SDK.md)，当前实机及未验收范围见[跨仓库路线图](../architecture/CONTROLLER_ROADMAP.md)。不把协议版本、插件发现或健康检查当作策略正确性证明。
+本指南对应SDK 0.3.6源码、协议版本1；新版本真实Ray/NPU验收仍须核路线图。接口说明见[公共SDK](SDK.md)，当前实机及未验收范围见[跨仓库路线图](../architecture/CONTROLLER_ROADMAP.md)。不把协议版本、插件发现或健康检查当作策略正确性证明。
 
 ## 1. 系统责任与运行路径
 

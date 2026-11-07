@@ -32,7 +32,9 @@ def ray_entrypoint(command, name):
     arguments = shlex.split(command)
     if not arguments:
         raise ValueError('Component command is empty')
-    return shlex.join(['python', '-m', 'ride.ray_job', '--name', name, '--', *arguments])
+    # Ray Jobs executes through a shell. Replace that shell so the supervisor
+    # directly parents and reaps the driver rather than orphaning it on stop.
+    return 'exec ' + shlex.join(['python', '-m', 'ride.ray_job', '--name', name, '--', *arguments])
 
 
 def next_execution_submission_id(submission_id):

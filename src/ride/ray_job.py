@@ -7,6 +7,7 @@
 import argparse
 import json
 import os
+import signal
 import subprocess
 
 
@@ -18,13 +19,42 @@ def run(command, name, *, ray_module=None):
     # Ray Jobs supplies the selected cluster address and JobConfig metadata.
     # Never start a private Ray runtime when the selected cluster is unavailable.
     ray_module.init(address=os.environ.get('RAY_ADDRESS') or 'auto')
+    child = None
+    stop_signal = None
+    previous_handlers = {}
+
+    def forward_signal(number, frame):
+        nonlocal stop_signal
+        stop_signal = number
+        if child is not None and child.poll() is None:
+            try:
+                child.send_signal(number)
+            except ProcessLookupError:
+                pass
+
     try:
         print(json.dumps({'component': name,
                           'ray_job_id': str(ray_module.get_runtime_context().get_job_id()),
                           'event': 'driver_registered'}), flush=True)
-        result = subprocess.run(command, check=False)
-        return result.returncode if result.returncode >= 0 else 128 - result.returncode
+        for number in (signal.SIGTERM, signal.SIGINT):
+            previous_handlers[number] = signal.signal(number, forward_signal)
+        if stop_signal is not None:
+            return 128 + stop_signal
+        child = subprocess.Popen(command)
+        print(json.dumps({'component': name, 'event': 'component_started',
+                          'driver_pid': os.getpid(), 'child_pid': child.pid}), flush=True)
+        if stop_signal is not None and child.poll() is None:
+            child.send_signal(stop_signal)
+        returncode = child.wait()
+        if stop_signal is not None:
+            return 128 + stop_signal
+        return returncode if returncode >= 0 else 128 - returncode
     finally:
+        if child is not None and child.poll() is None:
+            child.terminate()
+            child.wait()
+        for number, handler in previous_handlers.items():
+            signal.signal(number, handler)
         ray_module.shutdown()
 
 
