@@ -61,7 +61,7 @@ Demo 单张 NPU 真实 vLLM 请求、并发限制、停止和恢复的结果：
 scripts/one-click.sh accept-adoption /absolute/frozen-plan.json /absolute/new-evidence-directory
 ```
 
-计划保留原部署的`address`、`ray_address`、`management_job_id`、`runtime_env`和平台身份，`deployment_output`指向含`management-submission.json`的原部署证据目录。可显式冻结`adoption_job_id`，值必须是原管理Job ID加`-adopt`。`timeout`是运维就绪检查期限，不是业务请求timeout。
+计划保留原部署的`address`、`ray_address`、`management_job_id`、`runtime_env`和平台身份，`deployment_output`指向含`management-submission.json`的原部署证据目录。可显式冻结`adoption_job_id`，值必须将原管理 Submission ID 的 `execution-N` 递增为 `execution-(N+1)`；组件显示名仍为 `RIDE Control Plane`。`timeout`是运维就绪检查期限，不是业务请求timeout。
 
 入口先核平台与Ray关联、原管理Job为RUNNING且命令匹配、现存运行实例Ready。已存在停止或接管意图则拒绝重投。随后仅替换管理Job，读取原状态目录，要求run_id相同、管理进程改变、所有Controller和模型Job ID不变。原本STOPPED的模型保持STOPPED；运行中的实例等待恢复Ready。执行绑定改为新管理Job，冻结输入文件不改写。
 

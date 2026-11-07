@@ -94,7 +94,7 @@ ride start controller <实例名称>
 
 组件显示名使用 `display_name`，例如 `Instance Autoscaling Controller`；实例标识使用 `instance-autoscaling-controller`。工作区范围放在部署配置中，不把日期、端口或随机字符串塞进显示名。同一组件恢复后名称不变，新的 Ray Submission ID 以 `execution-2` 明确执行次数。
 
-Ray 部署会通过 `python -m ride.ray_job` 注册原生 driver，再运行适配器产生的前台命令。Controller 包仍可独立运行；local 部署不经过此入口。状态中的 `submission_id` 用于 Ray Jobs 查询/停止，`ray_job_id` 用于关联 Ray Core；历史字段 `job_id` 保留 Submission ID 的兼容语义。原生 ID 尚未产生或读取失败时不伪造值。普通 HTTP 服务没有自动产生业务 Ray Actors/Tasks，不能把 JobSupervisor 当作 Controller 的业务 Actor。
+Ray 部署会通过 `python -m ride.ray_job` 注册原生 driver，再运行适配器产生的前台命令。Controller 包仍可独立运行；local 部署不经过此入口。状态中的 `submission_id` 用于 Ray Jobs 查询/停止，`ray_job_id` 用于关联 Ray Core；历史字段 `job_id` 保留 Submission ID 的兼容语义。原生 ID 尚未产生或读取失败时不伪造值。前台入口通过 `exec` 去掉额外 shell，停止信号转发后等待直接子进程；平台容器的 PID 1 负责回收孤儿后代。两层分别验收，不能用 Job 已停止代替进程已消失。普通 HTTP 服务没有自动产生业务 Ray Actors/Tasks，不能把 JobSupervisor 当作 Controller 的业务 Actor。
 
 类型描述实现，名称描述运行实例。同名配置冲突会拒绝，修改配置需使用新实例名。
 Controller 包必须可从 Ray 执行环境导入；可预装到执行节点，或提供 `--runtime-env`。
@@ -130,3 +130,19 @@ ride verify --controller throttle-main --model-service model-main \
 源码入口：[命令](../../src/ride/__main__.py)、[类型映射](../../src/ride/registry.py)、
 [Ray 生命周期与探测](../../src/ride/runtime.py)、[验收契约](../reference/ACCEPTANCE_CONTRACT.md)。
 已有类型的操作步骤见 [CLI quickstart](CLI_QUICKSTART.md)。
+
+
+### 在 Ray UI 中理解实例扩缩
+
+Jobs 页按以下完整组件名查看。`RUNNING` 表示进程存活；模型可转发还要核 RIDE 的 `ready` 和真实请求。正常停止后的旧执行保留为 `STOPPED`，恢复产生下一次执行及新的原生 Job ID。
+
+| 组件 | 职责 | 应查看的证据 |
+| --- | --- | --- |
+| RIDE Control Plane | 托管独立 Controller 与模型 Job，提供生命周期 API | 管理日志、原生 Job ID、组件状态；恢复后其他组件 Job ID 保持不变 |
+| Instance Autoscaling Controller | 周期观测、策略决策、调用 RIDE 扩缩，并协调请求与 KV 排空 | `instance_tick` 的观测时间、目标副本、动作和原因；随后对应模型 Job 出现或停止 |
+| Request Throttling Controller | 客户端到模型之间的限流与路由 | 逐请求路由、排队、在途请求和任务释放；新增模型实际承接请求 |
+| Key Value Cache Controller | 管理已声明 KV 后端及其排空状态 | 后端能力和动作回执；Controller Ready 不代表后端物理复制已验收 |
+| Inference Model Replica 1 / 2 / … | 运行真实 vLLM 实例 | 模型启动日志、引擎 Ready、实际生成指标；停止后驱动和子进程消失 |
+| Instance Capacity Calibration | 在固定模型上发送容量标定请求 | 实际输入/输出 token、延迟和批次结果；它不是扩缩策略或收益实验 |
+
+这些组件目前是前台进程形式的 Ray Jobs。`JobSupervisor` 是 Ray 的内部托管 Actor，不能解释为业务 Controller Actor；没有提交业务 Ray Tasks 时，Tasks 数量为零是正常现象。Ray UI 负责执行身份、状态和日志，业务指标还需结合 Controller 状态接口与 vLLM metrics。证明一次扩缩要串起同一时间线：策略决策 → RIDE 条件操作及回执 → 精确模型 Job → 新模型真实请求或旧模型排空 → 进程及资源释放。只有创建 Job 或看到两条 RUNNING 记录不够。
