@@ -18,12 +18,44 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class PayloadTests(unittest.TestCase):
+    def test_public_prepare_forwards_explicit_workspace_root(self):
+        plan=dict(namespace='tenant-b',cluster='owned',cluster_uid='cluster-id',pod='head',pod_uid='pod-id',files=[],workspace_root='/mnt/tenant-b',destination='/mnt/tenant-b/deployment')
+        records=[json.dumps({'metadata':{'uid':'cluster-id'}}),json.dumps({'metadata':{'uid':'pod-id','labels':{'ray.io/cluster':'owned'}}}),b'{"files":[]}']
+        with patch.object(module.subprocess,'check_output',side_effect=records) as calls:
+            module.prepare_payload(plan)
+            submitted=json.loads(calls.call_args.kwargs['input'])
+            self.assertEqual(submitted['workspace_root'],plan['workspace_root'])
+
+    def test_same_remote_code_supports_configured_workspace_roots(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base=Path(directory).resolve()
+            for relative in ['workspace/home', 'home/inference', 'mnt/persistent']:
+                with self.subTest(root=relative):
+                    workspace=base/relative;workspace.mkdir(parents=True)
+                    payload={'workspace_root':str(workspace),'destination':str(workspace/'deployment'), 'files':[{'path':'config.json','data':base64.b64encode(b'frozen').decode(),'sha256':hashlib.sha256(b'frozen').hexdigest(),'mode':0o644}]}
+                    result=subprocess.run([sys.executable,'-c',module.REMOTE],input=json.dumps(payload).encode(),capture_output=True)
+                    self.assertEqual(result.returncode,0,result.stderr)
+                    self.assertEqual((workspace/'deployment/config.json').read_bytes(),b'frozen')
+
+    def test_configured_workspace_root_keeps_containment_and_symlink_guards(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base=Path(directory).resolve();workspace=base/'workspace';workspace.mkdir()
+            item={'path':'config.json','data':base64.b64encode(b'frozen').decode(),'sha256':hashlib.sha256(b'frozen').hexdigest(),'mode':0o644}
+            cases=[('root-filesystem','/',str(workspace/'deployment')),('relative','relative',str(workspace/'deployment')),('sibling-prefix',str(workspace),str(base/'workspace-other/deployment')),('traversal',str(workspace),str(workspace/'../escaped'))]
+            (workspace/'link').symlink_to(base,target_is_directory=True)
+            cases.append(('symlink',str(workspace),str(workspace/'link/deployment')))
+            for name,root,destination in cases:
+                with self.subTest(case=name):
+                    result=subprocess.run([sys.executable,'-c',module.REMOTE],input=json.dumps({'workspace_root':root,'destination':destination,'files':[item]}).encode(),capture_output=True)
+                    self.assertNotEqual(result.returncode,0)
+            self.assertFalse((base/'escaped').exists());self.assertFalse((base/'workspace-other').exists());self.assertFalse((base/'deployment').exists())
+
     def test_remote_partial_publication_never_leaves_a_partial_final_file(self):
         with tempfile.TemporaryDirectory() as directory:
             directory=str(Path(directory).resolve());root=directory+'/payload'
-            code=module.REMOTE.replace('/workspace/home/',directory+'/')
+            code=module.REMOTE
             raw=b'frozen-data';item=dict(path='config.json',data=base64.b64encode(raw).decode(),sha256=hashlib.sha256(raw).hexdigest(),mode=0o644)
-            payload=json.dumps(dict(destination=root,files=[item])).encode()
+            payload=json.dumps(dict(workspace_root=directory,destination=root,files=[item])).encode()
             interrupted='import os\ndef stopped(*args,**kwargs):raise OSError("publication interrupted")\nos.link=stopped\n'+code
             first=subprocess.run([sys.executable,'-c',interrupted],input=payload,capture_output=True)
             self.assertNotEqual(first.returncode,0)
@@ -48,14 +80,14 @@ class PayloadTests(unittest.TestCase):
             # macOS /var is a symlink; test an ordinary directory, not the
             # separately forbidden symlink-destination case.
             directory = str(Path(directory).resolve())
-            code = module.REMOTE.replace('/workspace/home/', directory + '/')
+            code = module.REMOTE
             destination = directory + '/payload'
             def item(data, path='config.json'):
                 return dict(path=path, data=base64.b64encode(data).decode(),
                             sha256=hashlib.sha256(data).hexdigest())
             def run(files):
                 return subprocess.run([sys.executable, '-c', code],
-                    input=json.dumps(dict(destination=destination, files=files)).encode(),
+                    input=json.dumps(dict(workspace_root=directory,destination=destination, files=files)).encode(),
                     capture_output=True)
             self.assertEqual(run([item(b'original')]).returncode, 0)
             self.assertEqual(run([item(b'original')]).returncode, 0)
@@ -67,14 +99,14 @@ class PayloadTests(unittest.TestCase):
     def test_explicit_executable_mode_and_invalid_mode(self):
         with tempfile.TemporaryDirectory() as directory:
             directory=str(Path(directory).resolve())
-            code=module.REMOTE.replace('/workspace/home/',directory+'/')
+            code=module.REMOTE
             root=directory+'/payload'
             def run(mode):
                 data=b'#!/bin/sh\nexit 0\n'
                 item=dict(path='service',data=base64.b64encode(data).decode(),
                           sha256=hashlib.sha256(data).hexdigest(),mode=mode)
                 return subprocess.run([sys.executable,'-c',code],input=json.dumps(
-                    dict(destination=root,files=[item])).encode(),capture_output=True)
+                    dict(workspace_root=directory,destination=root,files=[item])).encode(),capture_output=True)
             self.assertEqual(run(0o755).returncode,0)
             self.assertEqual(Path(root,'service').stat().st_mode & 0o777,0o755)
             self.assertEqual(run(0o755).returncode,0)

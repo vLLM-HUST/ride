@@ -112,8 +112,13 @@ def stage_archive(archive, destination, identity, expected_sha256):
 REMOTE = r'''
 import base64,hashlib,json,os,pathlib,sys,tempfile
 p=json.load(sys.stdin);root=pathlib.Path(p['destination'])
-if not str(root).startswith('/workspace/home/') or '..' in root.parts:
- raise ValueError('Destination outside workspace home')
+# The default preserves existing plans; new environments supply workspace_root.
+workspace=pathlib.Path(p.get('workspace_root','/workspace/home/'))
+if (not workspace.is_absolute() or workspace==pathlib.Path('/') or '..' in workspace.parts
+    or not root.is_absolute() or '..' in root.parts or root==workspace or not root.is_relative_to(workspace)):
+ raise ValueError('Destination outside configured workspace root')
+for ancestor in [root,*root.parents]:
+ if ancestor.is_symlink():raise ValueError('Symlink destination refused')
 checked=[]
 for item in p['files']:
  mode=item.get('mode')
@@ -175,7 +180,9 @@ def prepare_payload(spec):
             raise ValueError('Source checksum differs from frozen plan')
         files.append({'path': item['path'], 'sha256': digest,
                       'data': base64.b64encode(data).decode(), 'mode': mode})
+    payload = {'destination': spec['destination'], 'files': files}
+    if 'workspace_root' in spec:
+        payload['workspace_root'] = spec['workspace_root']
     response = subprocess.check_output(base + ['exec', '-i', spec['pod'], '--',
-                   'python3', '-c', REMOTE], input=json.dumps(
-                       {'destination': spec['destination'], 'files': files}).encode(), timeout=120)
+                   'python3', '-c', REMOTE], input=json.dumps(payload).encode(), timeout=120)
     return json.loads(response)
