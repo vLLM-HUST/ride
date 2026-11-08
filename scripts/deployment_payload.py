@@ -122,8 +122,8 @@ for ancestor in [root,*root.parents]:
 checked=[]
 for item in p['files']:
  mode=item.get('mode')
- if mode is not None and (type(mode) is not int or mode not in (0o644,0o755)):
-  raise ValueError('Only explicit regular or executable file modes are supported')
+ if mode is not None and (type(mode) is not int or mode not in (0o600,0o644,0o755)):
+  raise ValueError('Only private, regular or executable file modes are supported')
  rel=pathlib.Path(item['path'])
  if rel.is_absolute() or '..' in rel.parts:raise ValueError('Unsafe relative path')
  target=root/rel
@@ -169,8 +169,8 @@ def prepare_payload(spec):
     total = 0
     for item in spec['files']:
         mode = item.get('mode')
-        if mode is not None and (type(mode) is not int or mode not in (0o644, 0o755)):
-            raise ValueError('Only explicit regular or executable file modes are supported')
+        if mode is not None and (type(mode) is not int or mode not in (0o600, 0o644, 0o755)):
+            raise ValueError('Only private, regular or executable file modes are supported')
         data = Path(item['source']).read_bytes()
         total += len(data)
         if total > 256 * 1024 * 1024:

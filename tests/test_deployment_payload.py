@@ -18,6 +18,25 @@ module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
 
 class PayloadTests(unittest.TestCase):
+    def test_private_payload_mode_through_public_prepare_and_remote_readback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory).resolve();source=root/'source';source.write_bytes(b'private-configuration')
+            plan=dict(namespace='tenant',cluster='owned',cluster_uid='cluster-id',pod='head',pod_uid='pod-id',
+                workspace_root=str(root),destination=str(root/'payload'),files=[dict(path='token',
+                source=str(source),sha256=hashlib.sha256(source.read_bytes()).hexdigest(),mode=0o600)])
+            def command(argv,**kwargs):
+                if 'get' in argv:
+                    if 'raycluster' in argv:return json.dumps({'metadata':{'uid':'cluster-id'}})
+                    return json.dumps({'metadata':{'uid':'pod-id','labels':{'ray.io/cluster':'owned'}}})
+                result=subprocess.run([sys.executable,'-c',module.REMOTE],input=kwargs['input'],capture_output=True,check=True)
+                return result.stdout
+            with patch.object(module.subprocess,'check_output',side_effect=command):
+                receipt=module.prepare_payload(plan)
+                repeated=module.prepare_payload(plan)
+            self.assertEqual((root/'payload/token').stat().st_mode & 0o777,0o600)
+            self.assertEqual(receipt['files'][0]['mode'],0o600)
+            self.assertEqual(repeated,receipt)
+
     def test_public_prepare_forwards_explicit_workspace_root(self):
         plan=dict(namespace='tenant-b',cluster='owned',cluster_uid='cluster-id',pod='head',pod_uid='pod-id',files=[],workspace_root='/mnt/tenant-b',destination='/mnt/tenant-b/deployment')
         records=[json.dumps({'metadata':{'uid':'cluster-id'}}),json.dumps({'metadata':{'uid':'pod-id','labels':{'ray.io/cluster':'owned'}}}),b'{"files":[]}']
