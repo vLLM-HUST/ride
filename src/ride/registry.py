@@ -7,6 +7,12 @@ def controller_adapter(name):
     if len(matches)>1: raise ValueError("Duplicate Controller type: " + name)
     return matches[0].load() if matches else None
 
+def model_service_adapter(name):
+    """Discover an installed backend; RIDE retains all Job lifecycle effects."""
+    matches=list(entry_points(group='ride.model_services',name=name))
+    if len(matches)>1:raise ValueError('Duplicate model service type: '+str(name))
+    return matches[0].load() if matches else None
+
 
 def command(kind, spec):
     name = spec.get('type', spec.get('entrypoint'))
@@ -38,4 +44,13 @@ def command(kind, spec):
             setup = 'set -e; ' + '; '.join('source ' + shlex.quote(p) for p in scripts) + '; exec "$@"'
             return shlex.join(['bash', '-c', setup, 'ride-model', *command_args])
         return shlex.join(command_args)
+    if kind == 'model_services':
+        if not spec.get('model') or not spec.get('endpoint'):
+            raise ValueError('Model service requires --model and reachable --endpoint')
+        adapter=model_service_adapter(name)
+        if adapter is not None:
+            result=adapter.command(spec)
+            if not isinstance(result,str) or not result.strip():
+                raise ValueError('Model adapter must return a nonempty foreground command')
+            return result
     raise ValueError('Unsupported ' + kind + ' type: ' + str(name))

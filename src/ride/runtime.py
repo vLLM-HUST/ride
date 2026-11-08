@@ -11,7 +11,7 @@ import weakref
 from pathlib import Path
 from datetime import datetime, timezone
 from urllib.request import urlopen
-from .registry import command, controller_adapter
+from .registry import command, controller_adapter, model_service_adapter
 from .job_submission import component_name, job_metadata, ray_entrypoint
 
 _UNCONDITIONAL = object()
@@ -274,6 +274,20 @@ class Runtime:
         if kind == 'model_services':
             record['model'] = spec['model']
             record['evidence_type'] = 'mock' if spec.get('type')=='mock-vllm' else 'hardware'
+            if record['type']not in ('vllm','mock-vllm'):
+                adapter=model_service_adapter(record['type'])
+                if adapter is None:
+                    record['probe_error']='ModelServiceAdapterUnavailable'
+                    return record
+                if record['job_status']=='RUNNING':
+                    try:
+                        observed=adapter.probe(spec)
+                        record['model_ready']=observed.get('model_ready')is True
+                        for field in ('health','identity','status'):
+                            if field in observed:record[field]=observed[field]
+                        record['ready']=record['model_ready']
+                    except Exception as error:record['probe_error']=type(error).__name__
+                return record
             record['ready'] = record['job_status'] == 'RUNNING' and self.health(spec['endpoint'])
         else:
             if spec.get('backend') is not None:
