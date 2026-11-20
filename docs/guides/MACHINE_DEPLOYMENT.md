@@ -4,7 +4,7 @@
 含请求等待/恢复、管理接管和停止隔离。冷启动使用 30ec6a4，管理重启入口使用
 3a4adde；随后合入上游 0.3.3 安全修复的开发版通过 103 项软件检查，尚未重新
 执行 NPU 验收。Linux 软件 CI 的 103 项、CLI/构建及轻量 SDK 检查也通过；验证清单已按组织规范迁存 benchmark，原件哈希保留。短证据见[验证清单](https://github.com/vLLM-HUST/vllm-hust-benchmark/blob/427c452767d6f7a820da96f4de70dcca786198d8/reports/ride-control-plane-20261106/source/evidence/machine-deployment-20261106/summary.json)。
-当前合并候选包含 0.3.4 公共对象和外部模型插件，118 项本地软件测试及 CLI/构建检查通过；该组合未重新执行 NPU 验收。
+0.3.4 合并候选包含公共对象和外部模型插件。当时通过 118 项本地软件测试及 CLI/构建检查，后续 NPU 验收见下文。
 入口自身的 PASS 只表示部署就绪检查通过，不证明真实推理、Controller 动作或性能收益。
 本功能在 RIDE 实现；gennova-d 后续消费，不复制部署器。
 
@@ -20,6 +20,22 @@
 小规模验收使用独立 devbox 模拟跳板机和目标节点。Coder 只用于提供容器，部署和评测
 入口使用与目标环境相同的 SSH 与服务地址。浦江实验室 16 台机器、128 张卡的规模验收
 在实际集群执行。
+
+
+### 2026-11-20 小规模验收
+
+9443 提供一个复用的跳板机工作区和两个临时模型工作区。两个模型工作区位于同一台
+物理主机，各使用一张独立的 Ascend 910B2。跳板机通过原生 SSH 启动 Ray，部署
+RIDE 0.3.4、两个 vLLM 0.23.0 的 Qwen3-0.6B 实例，以及请求限流控制器组件。
+容器提供驱动、CANN、引擎和共享模型。在独立 Python 环境中安装了固定版本的 Ray
+Dashboard 依赖、RIDE 和控制器。验证覆盖双节点部署、真实请求、评分和数据回收。
+
+冷启动到结果归档用时 5 分 18 秒，从已准备好的跳板机执行入口开始计算。随后使用
+`machines-run` 在同一部署上重验，四道 MMLU-Pro 样本分别经两个直连接口和控制器，
+每条路径均完成 4 次生成、答对 2 道。额外验证请求在两个副本暂停接收时进入等待，
+恢复接收后完成，并收到控制器的释放回执。跳板机生成两个工作区的日志包、原始响应、
+评分和 SHA-256 清单。该规模验收使用独立的单卡模型副本，正式集群的物理跨机通信、
+多卡模型切分、性能与容量验收需使用浦江实验室的实际配置。
 
 `machines-run` 在跳板机串起部署、评测和归档。使用事先准备好的机器清单、SSH 主机
 公钥和固定版本的软件包，从仓库运行：
@@ -43,7 +59,8 @@ bash scripts/one-click.sh machines-run experiment.json results/my-experiment
     {
       "name": "worker-a",
       "destination": "operator@10.0.0.10",
-      "paths": ["/home/operator/ride-run/logs"]
+      "paths": ["/home/operator/ride-run/logs"],
+      "exclude": ["runtime_env_agent.log"]
     }
   ]
 }
@@ -53,7 +70,8 @@ bash scripts/one-click.sh machines-run experiment.json results/my-experiment
 `setup_commands` 安装各节点的固定版本依赖。评测失败时仍逐台收集可用文件，并以非零
 状态退出。跳板机结果目录里的 `status.json` 记录每一步及每台节点的回执，
 `SHA256SUMS` 校验原始记录和节点归档，旁边的 `.tar.gz` 是整个结果包。归档路径
-仅填写本轮输出，凭据与私钥留在运行目录。重复运行使用新的结果目录。恢复部署时沿用
+仅填写本轮输出。按节点用 `exclude` 排除可能打印凭据的运行环境日志，
+并将凭据与私钥留在运行目录。重复运行使用新的结果目录。恢复部署时沿用
 已确认的原部署日志，按照下文的失败恢复约定执行。
 
 ## 用户入口与责任

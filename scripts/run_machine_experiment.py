@@ -27,9 +27,11 @@ def run_logged(command, log):
 
 
 def collect(host, config, output):
-    remote = shlex.join(["tar", "-czf", "-"] + [
+    sources = [
         item for source in host["paths"] for item in ("-C", "/", str(Path(source).relative_to("/")))
-    ])
+    ]
+    exclusions = ["--exclude=" + pattern for pattern in host.get("exclude", [])]
+    remote = shlex.join(["tar", "-czf", "-", *exclusions, *sources])
     command = [
         "ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=yes",
         "-o", "ConnectTimeout=10", "-o", "UserKnownHostsFile=" + config["known_hosts"],
@@ -43,7 +45,7 @@ def collect(host, config, output):
     return {"exit_code": result.returncode, "members": members}
 
 
-def seal(output):
+def seal(output, archive_path):
     records = {}
     for file in sorted(output.rglob("*")):
         if file.is_file():
@@ -53,7 +55,7 @@ def seal(output):
                     digest.update(chunk)
             records[file.relative_to(output).as_posix()] = digest.hexdigest()
     (output / "SHA256SUMS").write_text("".join(f"{digest}  {name}\n" for name, digest in records.items()))
-    with tarfile.open(output.with_suffix(".tar.gz"), "x:gz") as archive:
+    with tarfile.open(archive_path, "x:gz") as archive:
         archive.add(output, arcname=output.name)
 
 
@@ -73,7 +75,8 @@ def main():
                for path in host["paths"]):
             parser.error("Evidence paths must be absolute paths to specific files or directories")
     output = args.output.resolve()
-    if output.with_suffix(".tar.gz").exists():
+    archive_path = output.parent / (output.name + ".tar.gz")
+    if archive_path.exists():
         parser.error("Result archive already exists")
     output.mkdir(mode=0o700, parents=True)
     (output / "experiment.json").write_text(args.configuration.read_text())
@@ -110,8 +113,8 @@ def main():
         )
         status["status"] = "PASS" if success else "FAIL"
         (output / "status.json").write_text(json.dumps(status, indent=2) + "\n")
-        seal(output)
-        print(f'{status["status"]} {output.with_suffix(".tar.gz")}', flush=True)
+        seal(output, archive_path)
+        print(f'{status["status"]} {archive_path}', flush=True)
     return 0 if success else 1
 
 
