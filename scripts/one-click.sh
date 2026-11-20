@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ $# -eq 3 && "$1" == machines-run ]]; then
+  exec "${RIDE_PYTHON:-python3}" "$root/scripts/run_machine_experiment.py" "$2" "$3"
+fi
 if [[ $# -ge 3 && ( "$1" == machines-validate || "$1" == machines-up || "$1" == machines-status || "$1" == machines-stop || "$1" == machines-restart ) ]]; then
   exec "${RIDE_PYTHON:-python3}" -m ride.deployment "${1#machines-}" "${@:2}"
 fi

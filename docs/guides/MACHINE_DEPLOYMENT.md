@@ -21,8 +21,40 @@
 入口使用与目标环境相同的 SSH 与服务地址。浦江实验室 16 台机器、128 张卡的规模验收
 在实际集群执行。
 
-当前 `machines-up` 覆盖部署到服务就绪。上图的 benchmark、评分和跨节点归档是完整
-交付目标，其同命令验收单独记录。
+`machines-run` 在跳板机串起部署、评测和归档。使用事先准备好的机器清单、SSH 主机
+公钥和固定版本的软件包，从仓库运行：
+
+```bash
+bash scripts/one-click.sh machines-run experiment.json results/my-experiment
+```
+
+`experiment.json` 使用以下字段。评测命令的最后一个参数由入口追加，值是本轮结果
+目录。评测脚本将原始请求、响应和评分写入该目录。示例中的地址和路径需替换为实际值。
+
+```json
+{
+  "deployment": "/home/operator/ride-run/deployment.json",
+  "state_directory": "/home/operator/ride-run/deployment-state",
+  "ssh_key": "/home/operator/.ssh/ride",
+  "known_hosts": "/home/operator/ride-run/known_hosts",
+  "prepare_command": ["bash", "/home/operator/ride-run/prepare-nodes.sh"],
+  "benchmark_command": ["python3", "/home/operator/ride-run/benchmark.py"],
+  "hosts": [
+    {
+      "name": "worker-a",
+      "destination": "operator@10.0.0.10",
+      "paths": ["/home/operator/ride-run/logs"]
+    }
+  ]
+}
+```
+
+准备命令可选，用于检查互通和补齐 Ray 启动器所需的节点工具。Ray 配置中的
+`setup_commands` 安装各节点的固定版本依赖。评测失败时仍逐台收集可用文件，并以非零
+状态退出。跳板机结果目录里的 `status.json` 记录每一步及每台节点的回执，
+`SHA256SUMS` 校验原始记录和节点归档，旁边的 `.tar.gz` 是整个结果包。归档路径
+仅填写本轮输出，凭据与私钥留在运行目录。重复运行使用新的结果目录。恢复部署时沿用
+已确认的原部署日志，按照下文的失败恢复约定执行。
 
 ## 用户入口与责任
 
