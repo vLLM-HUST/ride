@@ -99,6 +99,21 @@ RIDE_PYTHON="$PWD/results/pujiang.setup/venv/bin/python" \
 也已在 9443 的 ARM64 Ubuntu 22.04 验证。它使用带哈希的 wheel 包重新安装依赖、
 读取固定的 SWE-smith 输入和回放代码，成功加载 Qwen tokenizer，并生成了可校验的结果包。
 
+### 2026-11-20 单卡冷安装验收进展
+
+在 9443 的干净 Ubuntu 工作区分配了一张 Ascend 910B2。跳板机通过原生 SSH 传送
+了实际的系统包、Python wheel、CANN 安装包和模型。系统包恢复使用 Ubuntu 包管理器的
+依赖排序，仅启用本地包。独立 Python 环境装入了 vLLM 和控制面依赖。单卡文本资格
+配置保留了 NumPy 1.26.4 和兼容的 OpenCV 4.11，原因是所选 Triton Ascend 与 vLLM
+上游 OpenCV 要求不兼容。该配置不用于视频功能验收。
+
+CANN 9.1.0 Toolkit 和 910B 算子包在默认路径安装完成。NNAL 写入默认目录时，
+约 9.8 GiB 的工作区系统写入层耗尽，日志报告 `No space left on device`。
+此前选择的持久目录位于权限为 0700 的 `/root`，也被安装器的父目录权限检查拒绝。
+已核实资料中的[安装参数](https://www.hiascend.com/document/detail/en/CANNCommunityEdition/910/softwareinst/instg/instg_0043.html)。
+完整验收需要 16 个独占加速卡的目标实例，并给 CANN 提供可写、有足够容量且符合
+安装器权限要求的安装路径。该轮未启动 Ray、vLLM 推理、RIDE 服务或 SWE-smith 回放。
+
 ### 2026-11-20 小规模验收
 
 9443 提供一个复用的跳板机工作区和两个临时模型工作区。两个模型工作区位于同一台
