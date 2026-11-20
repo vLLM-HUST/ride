@@ -20,8 +20,11 @@ class MachineExperimentTests(unittest.TestCase):
             root = Path(directory).resolve()
             output = root / "results"
             configuration = root / "experiment.json"
+            initial = root / "bootstrap.tar.gz"
+            initial.write_bytes(b"bootstrap archive")
             configuration.write_text(json.dumps({
                 "deployment": str(root / "deployment.json"),
+                "initial_evidence": str(initial),
                 "state_directory": str(root / "state"),
                 "prepare_command": ["prepare-nodes"],
                 "benchmark_command": ["score-requests"],
@@ -49,6 +52,7 @@ class MachineExperimentTests(unittest.TestCase):
 
             with tarfile.open(output.with_suffix(".tar.gz")) as result:
                 self.assertIn("results/node-a.tar.gz", result.getnames())
+                self.assertEqual(result.extractfile("results/bootstrap-evidence.tar.gz").read(), initial.read_bytes())
                 manifest = result.extractfile("results/SHA256SUMS").read().decode()
                 self.assertIn("  node-a.tar.gz", manifest)
             status = json.loads((output / "status.json").read_text())

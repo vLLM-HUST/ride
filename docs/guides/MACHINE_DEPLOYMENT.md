@@ -26,8 +26,58 @@
 
 验收拓扑为 1 台 CPU 跳板机和 16 个各自独占设备的 NPU devbox。Coder 用于创建
 这些环境。部署入口运行在跳板机，使用指定机器清单和原生 SSH。工作区以干净
-Ubuntu 22.04 为起点，部署前逐机记录 Ray、vLLM、CANN 用户态组件和 RIDE
-的缺失情况。宿主机提供加速卡及设备访问。
+Ubuntu 22.04 为起点。宿主机提供加速卡、内核驱动及设备访问。脚本负责安装用户态
+软件，并拒绝在已有 Ray 或指定 CANN 工具链的目标机器上覆盖启动。
+
+使用团队准备过的[机器清单示例](machines-clean.example.json)，填写实际 IP、每台的卡数、
+CPU 数、SSH 文件路径及发布包地址，在跳板机运行一条命令：
+
+```bash
+bash scripts/one-click.sh machines-clean inventory.json results/pujiang
+```
+
+清单第一台机器运行 Ray 主节点及 RIDE 管理进程，每台目标机器启动一个 vLLM
+副本，副本内张量并行度取该机器所填卡数。SSH 使用已核验的主机公钥，目标节点使用
+专用的 root SSH 账号。跳板机需能安装 Ubuntu 软件包，目标节点之间需允许 Ray 通信。
+机器清单的 16 台、每台 8 卡是浦江配置示例，使用 9443 模拟时按实际独占设备数填卡数。
+
+跳板机启动前可使用 `python3 scripts/clean_machine_deployment.py --check inventory.json`
+做不联网的清单校验。在完整节点尚未分配时，可将 `--jump-only` 加到一键命令末尾，
+独立验证跳板机依赖、模型 tokenizer 以及 SWE-smith 回放工具。
+
+#### 发布包准备
+
+发布维护者为每个包填入跳板机可访问的地址和 SHA-256。跳板机下载一次，再通过
+SSH 把软件和权重发给各节点，目标节点可离线安装。包地址支持内网 HTTP、HTTPS
+和跳板机本地的 `file://`。操作人收到已填好的清单后运行上面的一条命令。
+
+| 清单里的包 | 内容 |
+| --- | --- |
+| `python-runtime` | 与机器架构一致的独立 Python 安装包，含 `python/bin/python3`。可使用 [Python Build Standalone install_only 发行包](https://github.com/astral-sh/python-build-standalone/blob/main/docs/distributions.rst#install-only-archive) |
+| `jump-wheelhouse` | RIDE、Ray Dashboard、SWE-smith 回放所需的 Controller 依赖及 Transformers wheel |
+| `worker-debs` | 与目标 Ubuntu 版本、架构匹配的离线系统依赖包，tar 根目录是完整的 `.deb` 文件，包括 Python 3、OpenSSH 客户端、rsync、procps、iproute2 及 CANN 所需系统库。SSH 服务由目标机器交付 |
+| `worker-wheelhouse` | RIDE、Ray Dashboard、与 CANN 及 Python 匹配的 PyTorch、torch_npu、vLLM 和 vLLM Ascend，以及实际的 Request Throttling Controller 和依赖 |
+| `installers` 指定的包 | 实验室批准的 CANN 工具链、内核算子等用户态安装包及该版本的安装参数，按清单顺序安装 |
+| `model` 和 `tokenizer` | 模型文件及同版本分词器的 tar 包。模型包直接包含 `config.json`，分词器包直接包含 `tokenizer_config.json`，保存实际文件 |
+| `swe-smith` | 固定版本的回放代码和完整输入批次 |
+
+准备冻结回放包与带校验值的 wheel 包：
+
+```bash
+python3 scripts/package_clean_machine_assets.py swe-smith CONTROLLER_CHECKOUT COMMIT WORKLOAD_DIR swe-smith.tar.gz
+python3 scripts/package_clean_machine_assets.py wheelhouse RESOLVED_JUMP_WHEELS jump-wheelhouse.tar.gz
+python3 scripts/package_clean_machine_assets.py wheelhouse RESOLVED_WORKER_WHEELS worker-wheelhouse.tar.gz
+```
+
+结果目录保存集群节点清单、回放汇总、逐轮记录和各机器的日志。安装中止时，查看
+`results/pujiang.setup/bootstrap-evidence.tar.gz`。完整运行时，查看
+`results/pujiang.tar.gz`。两类证据都附 SHA-256 清单。部署状态保存在同级
+`.setup` 目录。评测结束后，服务保持运行。归档完成后，可通过冻结的部署计划停止本轮作业：
+
+```bash
+RIDE_PYTHON="$PWD/results/pujiang.setup/venv/bin/python" \
+  bash scripts/one-click.sh machines-stop results/pujiang.setup/deployment.json results/pujiang.setup/state
+```
 
 1. 在跳板机下载并安装部署工具。为依赖包、推理引擎、模型权重和评测输入固定来源、
    版本及校验值。
@@ -45,7 +95,9 @@ Ubuntu 22.04 为起点，部署前逐机记录 Ray、vLLM、CANN 用户态组件
 因此使用容器控制台进入本轮临时跳板机。Ubuntu 软件仓库下载并安装 Python、SSH
 客户端、rsync 等工具，PyPI 下载 Ray 2.48.0 及 Dashboard 依赖，RIDE 0.3.4
 从校验过的 wheel 安装。验证了 RIDE CLI 与 Ray Dashboard 模块导入。16 个 NPU
-节点的安装、集群启动及 SWE-smith 回放仍待实测。
+节点的安装、集群启动及 SWE-smith 回放仍待实测。新增的 `machines-clean --jump-only`
+也已在 9443 的 ARM64 Ubuntu 22.04 验证。它使用带哈希的 wheel 包重新安装依赖、
+读取固定的 SWE-smith 输入和回放代码，成功加载 Qwen tokenizer，并生成了可校验的结果包。
 
 ### 2026-11-20 小规模验收
 

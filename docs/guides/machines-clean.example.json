@@ -1,0 +1,152 @@
+{
+  "name": "myc-pujiang-acceptance",
+  "expected_nodes": 16,
+  "ssh_user": "root",
+  "ssh_key": "/home/operator/.ssh/ride",
+  "known_hosts": "/home/operator/.ssh/ride-known-hosts",
+  "nodes": [
+    {
+      "address": "192.0.2.1",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.2",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.3",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.4",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.5",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.6",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.7",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.8",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.9",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.10",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.11",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.12",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.13",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.14",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.15",
+      "cards": 8,
+      "cpus": 24
+    },
+    {
+      "address": "192.0.2.16",
+      "cards": 8,
+      "cpus": 24
+    }
+  ],
+  "model": "qwen",
+  "model_args": [
+    "--max-model-len",
+    "32768"
+  ],
+  "readiness_timeout_seconds": 1200,
+  "assets": {
+    "python-runtime": {
+      "url": "https://artifacts.example.org/ride/python-linux-arm64.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "jump-wheelhouse": {
+      "url": "https://artifacts.example.org/ride/jump-wheelhouse.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "worker-wheelhouse": {
+      "url": "https://artifacts.example.org/ride/worker-wheelhouse.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "model": {
+      "url": "https://artifacts.example.org/ride/qwen-model.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "tokenizer": {
+      "url": "https://artifacts.example.org/ride/qwen-tokenizer.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "swe-smith": {
+      "url": "https://artifacts.example.org/ride/swe-smith.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "cann-toolkit": {
+      "url": "https://artifacts.example.org/ride/cann-toolkit.run",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "cann-kernels": {
+      "url": "https://artifacts.example.org/ride/cann-kernels.run",
+      "sha256": "REPLACE_WITH_SHA256"
+    },
+    "worker-debs": {
+      "url": "https://artifacts.example.org/ride/worker-ubuntu-debs.tar.gz",
+      "sha256": "REPLACE_WITH_SHA256"
+    }
+  },
+  "installers": [
+    {
+      "asset": "cann-toolkit",
+      "args": [
+        "--quiet",
+        "--install"
+      ]
+    },
+    {
+      "asset": "cann-kernels",
+      "args": [
+        "--quiet",
+        "--install"
+      ]
+    }
+  ],
+  "environment_scripts": [
+    "/usr/local/Ascend/ascend-toolkit/set_env.sh"
+  ]
+}

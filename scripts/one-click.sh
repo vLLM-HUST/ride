@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ $# -ge 3 && "$1" == machines-clean ]]; then
+  if ! command -v python3 >/dev/null; then
+    elevate=()
+    if [[ "$(id -u)" != 0 ]]; then elevate=(sudo -n); fi
+    "${elevate[@]}" env DEBIAN_FRONTEND=noninteractive apt-get update
+    "${elevate[@]}" env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3
+  fi
+  exec python3 "$root/scripts/clean_machine_deployment.py" "${@:2}"
+fi
 if [[ $# -eq 3 && "$1" == machines-run ]]; then
   exec "${RIDE_PYTHON:-python3}" "$root/scripts/run_machine_experiment.py" "$2" "$3"
 fi

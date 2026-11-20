@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import shlex
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -80,6 +81,8 @@ def main():
         parser.error("Result archive already exists")
     output.mkdir(mode=0o700, parents=True)
     (output / "experiment.json").write_text(args.configuration.read_text())
+    if config.get("initial_evidence"):
+        shutil.copyfile(config["initial_evidence"], output / "bootstrap-evidence.tar.gz")
     status = {"stages": {}, "nodes": {}}
     deployment = [sys.executable, "-m", "ride.deployment"]
     try:
