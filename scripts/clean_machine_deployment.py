@@ -200,8 +200,15 @@ def worker(root, config):
     with (evidence / "packages.txt").open("w") as stream:
         subprocess.run([python, "-m", "pip", "freeze"], stdout=stream, check=True)
     with (evidence / "npu.txt").open("w") as stream:
-        monitor = shutil.which("npu-smi") or "/usr/local/Ascend/driver/tools/npu-smi"
-        subprocess.run([monitor, "info"], stdout=stream, check=True)
+        candidates = (shutil.which("npu-smi"), "/usr/local/Ascend/driver/tools/npu-smi")
+        monitor = next((path for path in candidates if path and os.access(path, os.X_OK)), None)
+        if monitor:
+            result = subprocess.run([monitor, "info"], stdout=stream, stderr=subprocess.STDOUT)
+            print("npu-smi exit", result.returncode, file=stream)
+        else:
+            print("npu-smi unavailable. The preceding torch.npu probe verified the card count.", file=stream)
+            print("Visible device files:", *sorted(Path("/dev").glob("davinci*")), file=stream)
+
 
 
 def ssh(config, address, command):
