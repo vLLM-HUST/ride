@@ -299,7 +299,15 @@ def stage_worker_assets(config, root):
     artifacts.mkdir()
     sources = {"python-runtime": root / "python-runtime.tar"}
     for name in ("worker-wheelhouse", "model", *(item["asset"] for item in config["installers"])):
-        sources[name] = fetch(config["assets"][name], artifacts / f"{name}.artifact")
+        asset = config["assets"][name]
+        location = urlsplit(asset["url"])
+        if location.scheme == "file":
+            source = Path(url2pathname(location.path)).resolve()
+            if not source.is_file() or hash_file(source) != asset["sha256"]:
+                raise ValueError(f"SHA-256 mismatch for {name}")
+            sources[name] = source
+        else:
+            sources[name] = fetch(asset, artifacts / f"{name}.artifact")
     debs = artifacts / "debs"
     unpack(fetch(config["assets"]["worker-debs"], artifacts / "worker-debs.tar"), debs)
     packages = sorted(debs.iterdir())
