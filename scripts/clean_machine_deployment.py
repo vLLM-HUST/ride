@@ -344,7 +344,7 @@ def prepare_node(config, node, remote, root, command, evidence, worker_assets):
         "sha256sum -c worker-debs.sha256; "
         "mkdir apt-lists; DEBIAN_FRONTEND=noninteractive apt-get "
         "-o Dir::Etc::sourcelist=/dev/null -o Dir::Etc::sourceparts=- "
-        "-o Dir::State::lists=apt-lists -y --no-install-recommends install ./debs/*.deb; "
+        "-o Dir::State::lists=\"$PWD/apt-lists\" -y --no-install-recommends install ./debs/*.deb; "
         "python3 bootstrap.py --worker worker.json"
     )
     log = evidence / f"install-{address}.log"
