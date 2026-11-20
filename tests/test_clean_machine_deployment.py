@@ -124,3 +124,23 @@ class CleanMachineDeploymentTests(unittest.TestCase):
                   patch.object(clean.subprocess, "run")):
                 self.assertEqual(clean.environment(root, config["assets"], "jump"), root / "venv/bin/python")
             self.assertEqual([call.args[1].name for call in extract.call_args_list], ["wheelhouse", "python-runtime"])
+
+    def test_worker_debs_accepts_ubuntu_update_version_filenames(self):
+        config = self.inventory()
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp).resolve()
+            root = source / "jump"
+            root.mkdir()
+            raw = source / "worker-debs.tar"
+            with tarfile.open(raw, "w") as tar:
+                package = tarfile.TarInfo("libcc1-0_12.3.0-1ubuntu1~22.04.3_arm64.deb")
+                package.size = 1
+                tar.addfile(package, io.BytesIO(b"x"))
+            lock = source / "package"
+            lock.write_bytes(b"locked artifact")
+            for asset in ("worker-wheelhouse", "model", "cann", "worker-debs"):
+                path = raw if asset == "worker-debs" else lock
+                config["assets"][asset] = {"url": path.as_uri(), "sha256": clean.hash_file(path)}
+            _, packages, checksums = clean.stage_worker_assets(config, root)
+            self.assertEqual([deb.name for deb in packages], [package.name])
+            self.assertIn(package.name, checksums.read_text())

@@ -311,7 +311,7 @@ def stage_worker_assets(config, root):
     debs = artifacts / "debs"
     unpack(fetch(config["assets"]["worker-debs"], artifacts / "worker-debs.tar"), debs)
     packages = sorted(debs.iterdir())
-    if not packages or any(not item.is_file() or not re.fullmatch(r"[A-Za-z0-9_.+%-]+\.deb", item.name)
+    if not packages or any(not item.is_file() or not re.fullmatch(r"[A-Za-z0-9_.+%~-]+\.deb", item.name)
                            for item in packages):
         raise ValueError("worker-debs must contain only flat .deb files")
     (artifacts / "worker-debs.sha256").write_text("".join(
