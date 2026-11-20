@@ -23,6 +23,7 @@ from run_machine_experiment import seal
 
 
 BASE_PACKAGES = ("ca-certificates", "curl", "git", "iproute2", "openssh-client", "procps", "python3-venv", "rsync")
+DEFAULT_WORKER_PARENT = "/opt/ride-clean"
 CORE_ASSETS = ("python-runtime", "jump-wheelhouse", "worker-wheelhouse", "worker-debs", "model", "tokenizer", "swe-smith")
 TOKEN_ENV = "RIDE_CONTROLLER_TOKEN"
 
@@ -47,6 +48,9 @@ def validate(config):
     for key in ("ssh_key", "known_hosts"):
         if not Path(config[key]).is_absolute():
             raise ValueError(f"{key} must be an absolute path")
+    worker_parent = Path(config.get("worker_work_parent", DEFAULT_WORKER_PARENT))
+    if not worker_parent.is_absolute() or worker_parent == Path("/") or ".." in worker_parent.parts:
+        raise ValueError("worker_work_parent must be an absolute dedicated directory")
     nodes = config["nodes"]
     expected = config["expected_nodes"]
     if type(expected) is not int or expected < 1 or len(nodes) != expected:
@@ -174,12 +178,15 @@ def worker(root, config):
     addresses = subprocess.check_output(["hostname", "-I"], text=True).split()
     if config["address"] not in addresses:
         raise ValueError("SSH target does not own the inventory network address")
+    python = environment(root, config["assets"], "worker")
+    install_env = {**os.environ, "PATH": str(python.parent) + ":" + os.environ["PATH"]}
     for installer in config["installers"]:
         asset = installer["asset"]
         path = local_worker_asset(config["assets"][asset], root)
         path.chmod(0o700)
-        subprocess.run([path, *installer["args"]], check=True, cwd=root)
-    python = environment(root, config["assets"], "worker")
+        installed_scripts = [script for script in config["environment_scripts"] if Path(script).is_file()]
+        subprocess.run(source_command(installed_scripts, [path, *installer["args"]]),
+                       check=True, cwd=root, env=install_env)
     unpack(local_worker_asset(config["assets"]["model"], root), root / "model")
     if not (root / "model/config.json").is_file():
         raise ValueError("Model archive must have config.json at its root")
@@ -318,7 +325,7 @@ def prepare_node(config, node, remote, root, command, evidence, worker_assets):
         "for name in /proc/[0-9]*/comm; do "
         "if read -r process 2>/dev/null < \"$name\" && test \"$process\" = raylet; then "
         "echo 'Existing Ray node' >&2; exit 1; fi; done; "
-        f"mkdir -p /opt/ride-clean; mkdir {shlex.quote(remote)}; cd {shlex.quote(remote)}; tar -xf -; "
+        f"mkdir -p {shlex.quote(str(Path(remote).parent))}; mkdir {shlex.quote(remote)}; cd {shlex.quote(remote)}; tar -xf -; "
         "sha256sum -c worker-debs.sha256; "
         "DEBIAN_FRONTEND=noninteractive dpkg -i debs/*.deb; "
         "python3 bootstrap.py --worker worker.json"
@@ -395,7 +402,7 @@ def orchestrate(config_file, output, jump_only=False):
     evidence = root / "bootstrap-evidence"
     evidence.mkdir()
     dump(evidence / "inventory.json", config)
-    remote = "/opt/ride-clean/" + config["name"]
+    remote = str(Path(config.get("worker_work_parent", DEFAULT_WORKER_PARENT)) / config["name"])
     token = secrets.token_hex(32)
     (root / "controller-token").write_text(token + "\n")
     plan = write_plans(config, root, remote, token)

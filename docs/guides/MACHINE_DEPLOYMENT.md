@@ -38,7 +38,7 @@ bash scripts/one-click.sh machines-clean inventory.json results/pujiang
 
 清单第一台机器运行 Ray 主节点及 RIDE 管理进程，每台目标机器启动一个 vLLM
 副本，副本内张量并行度取该机器所填卡数。SSH 使用已核验的主机公钥，目标节点使用
-专用的 root SSH 账号。跳板机需能安装 Ubuntu 软件包，目标节点之间需允许 Ray 通信。
+专用的 root SSH 账号。跳板机需能安装 Ubuntu 软件包，目标节点之间需允许 Ray 通信。可以用 `worker_work_parent` 指定空间充足的独立工作目录。
 机器清单的 16 台、每台 8 卡是浦江配置示例，使用 9443 模拟时按实际独占设备数填卡数。
 
 跳板机启动前可使用 `python3 scripts/clean_machine_deployment.py --check inventory.json`
