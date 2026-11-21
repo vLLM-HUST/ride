@@ -115,28 +115,6 @@ class DeploymentTests(unittest.TestCase):
         self.assertIn('python -m ride serve', self.ray.submitted[0]['entrypoint'])
         self.assertEqual(self.ray.submitted[0]['entrypoint_num_gpus'], 0)
 
-    def test_model_batch_submits_each_replica_before_waiting_and_starts_controller_last(self):
-        config = plan()
-        config['model_start_batch_size'] = 2
-        config['model_services'].append(dict(config['model_services'][0], id='model-b',
-                                            endpoint='http://worker-b:8000',
-                                            resources={'NPU': 1, 'node:worker-b': 0.001}))
-        deployment = self.deployment(config)
-        self.addCleanup(deployment.close)
-        observed = []
-        original = self.management.models.describe
-
-        def describe(name):
-            observed.append((name, [call[:2] for call in self.management.calls]))
-            return original(name)
-
-        self.management.models.describe = describe
-        deployment.up()
-        models = [('models', 'model-a'), ('models', 'model-b')]
-        self.assertEqual(observed, [('model-a', models), ('model-b', models)])
-        self.assertEqual([call[:2] for call in self.management.calls],
-                         [*models, ('controllers', 'controller-a')])
-
     def test_changed_plan_rejected_before_any_effect(self):
         item = self.deployment(); item.close()
         changed = plan(); changed['model_services'][0]['model'] = '/other'

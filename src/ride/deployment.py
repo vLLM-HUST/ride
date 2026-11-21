@@ -47,9 +47,6 @@ def validate_plan(plan):
     timeout = plan.get('readiness_timeout_seconds', 600)
     if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not math.isfinite(timeout) or timeout <= 0:
         raise ValueError('Positive operational readiness deadline required')
-    batch_size = plan.get('model_start_batch_size', 1)
-    if type(batch_size) is not int or batch_size < 1:
-        raise ValueError('Positive integer model_start_batch_size required')
     ray = plan['ray']; management = plan['management']
     if ray.get('mode') not in ('existing', 'bootstrap'):
         raise ValueError('Explicit Ray mode required')
@@ -258,25 +255,19 @@ class Deployment:
             self.wait(client.status, self.verify_management, 'management')
             client.require_capabilities('conditional_start', 'conditional_stop')
             for kind, api in [('model_services', client.models), ('controllers', client.controllers)]:
-                specs = self.plan.get(kind, [])
-                batch_size = self.plan.get('model_start_batch_size', 1) if kind == 'model_services' else 1
-                for offset in range(0, len(specs), batch_size):
-                    submitted = []
-                    for spec in specs[offset:offset + batch_size]:
-                        operation = 'start-' + kind + '-' + spec['id']
-                        started = self.journal.execute(operation, spec, lambda:
-                            api.start(spec['id'], dict(spec, job_name_prefix=spec.get('job_name_prefix', spec['id'])),
-                                      operation_id=self.fingerprint + ':' + operation,
-                                      expected_job_id=None))
-                        if not isinstance(started, dict) or not started.get('job_id'):
-                            raise ValueError('Service submission identity missing')
-                        submitted.append((spec['id'], started['job_id']))
-                    for name, job_id in submitted:
-                        def ready(observed):
-                            if observed.get('job_id') and observed['job_id'] != job_id:
-                                raise ValueError('Service Job identity conflict')
-                            return observed.get('ready') is True and observed.get('job_id') == job_id
-                        self.wait(lambda: api.describe(name), ready, kind + '/' + name)
+                for spec in self.plan.get(kind, []):
+                    operation = 'start-' + kind + '-' + spec['id']
+                    started = self.journal.execute(operation, spec, lambda api=api, spec=spec, operation=operation:
+                        api.start(spec['id'], dict(spec, job_name_prefix=spec.get('job_name_prefix', spec['id'])),
+                                  operation_id=self.fingerprint + ':' + operation,
+                                  expected_job_id=None))
+                    if not isinstance(started, dict) or not started.get('job_id'):
+                        raise ValueError('Service submission identity missing')
+                    def ready(observed):
+                        if observed.get('job_id') and observed['job_id'] != started['job_id']:
+                            raise ValueError('Service Job identity conflict')
+                        return observed.get('ready') is True and observed.get('job_id') == started['job_id']
+                    self.wait(lambda: api.describe(spec['id']), ready, kind + '/' + spec['id'])
             self.activate_bindings(client)
             result = dict(status='PASS', scope='deployment readiness only',
                           model_request='NOT_RUN', controller_action='NOT_RUN', performance='NOT_RUN',
