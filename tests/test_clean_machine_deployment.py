@@ -115,6 +115,31 @@ class CleanMachineDeploymentTests(unittest.TestCase):
                 self.assertEqual(archive.extractfile("incoming/cann.run").read(), staged.read_bytes())
                 self.assertIn("debs/base.deb", archive.getnames())
 
+    def test_vendor_installers_extract_inside_the_worker_storage(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            installer = root / "fixture.run"
+            installer.write_text("test installer")
+            model = root / "model"
+            model.mkdir()
+            (model / "config.json").write_text("{}")
+            config = {
+                "address": "192.0.2.1", "cards": 1, "environment_scripts": [],
+                "assets": {"cann": {}, "model": {}},
+                "installers": [{"asset": "cann", "args": ["--quiet"]}],
+            }
+            with (patch.object(clean, "environment", return_value=root / "venv/bin/python"),
+                  patch.object(clean, "local_worker_asset", return_value=installer),
+                  patch.object(clean, "unpack"),
+                  patch.object(clean.subprocess, "check_output", return_value=config["address"]),
+                  patch.object(clean.subprocess, "run") as run):
+                clean.worker(root, config)
+            invocation = next(call for call in run.call_args_list if installer in call.args[0])
+            scratch = root / "vendor-tmp"
+            self.assertEqual(invocation.kwargs["env"].get("TMPDIR"), str(scratch))
+            self.assertTrue(scratch.is_dir())
+            self.assertEqual(scratch.stat().st_mode & 0o777, 0o700)
+
     def test_jump_unpacks_the_runtime_once_before_installing_wheels(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
