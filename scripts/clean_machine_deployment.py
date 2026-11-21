@@ -69,6 +69,9 @@ def validate(config):
             "--host", "--port", "--model", "--served-model-name", "--tensor-parallel-size",
         ):
             raise ValueError("Model args must preserve inventory routing and placement")
+    version = config.get("vllm_upstream_version")
+    if version is not None and (not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version)):
+        raise ValueError("vllm_upstream_version must identify the source release as major.minor.patch")
     if not config["installers"] or not config["environment_scripts"]:
         raise ValueError("Specify the CANN installers and runtime environment scripts")
     for path in config["environment_scripts"]:
@@ -193,13 +196,17 @@ def worker(root, config):
     unpack(local_worker_asset(config["assets"]["model"], root), root / "model")
     if not (root / "model/config.json").is_file():
         raise ValueError("Model archive must have config.json at its root")
+    probe_env = os.environ.copy()
+    if config.get("vllm_upstream_version"):
+        probe_env["VLLM_VERSION"] = config["vllm_upstream_version"]
     probe = ("import sys, torch, torch_npu, vllm; "
+             "from vllm.plugins import load_general_plugins; load_general_plugins(); "
              "import thunderagent_controller_mod.ride_managed; "
              "from ray.dashboard.modules.job.job_head import JobHead; "
              "n=torch.npu.device_count(); print('visible_npu_devices', n, flush=True); "
              "sys.exit(n != int(sys.argv[1]))")
     subprocess.run(source_command(config["environment_scripts"], [python, "-c", probe, str(config["cards"])]),
-                   check=True)
+                   check=True, env=probe_env)
     with (evidence / "packages.txt").open("w") as stream:
         subprocess.run([python, "-m", "pip", "freeze"], stdout=stream, check=True)
     with (evidence / "npu.txt").open("w") as stream:
@@ -258,10 +265,14 @@ def write_plans(config, root, remote, token):
     def placement(address):
         return {f"node:{address}": 0.001}
 
+    model_env = runtime["env_vars"].copy()
+    if config.get("vllm_upstream_version"):
+        model_env["VLLM_VERSION"] = config["vllm_upstream_version"]
     models = [
         {"id": f"model-{index:02}", "type": "vllm", "model": f"{remote}/model",
          "endpoint": f"http://{node['address']}:8000", "port": 8000, "num_cpus": 2, "num_gpus": 0,
-         "resources": {"NPU": node["cards"], **placement(node["address"])}, "runtime_env": runtime,
+         "resources": {"NPU": node["cards"], **placement(node["address"])},
+         "runtime_env": {"env_vars": model_env},
          "environment_scripts": config["environment_scripts"],
          "args": ["--served-model-name", config["model"], "--tensor-parallel-size", str(node["cards"]),
                   *config.get("model_args", [])]}
@@ -327,6 +338,8 @@ def prepare_node(config, node, remote, root, command, evidence, worker_assets):
     address = node["address"]
     sources, debs, deb_manifest = worker_assets
     node_config = {key: config[key] for key in ("installers", "environment_scripts")}
+    if config.get("vllm_upstream_version"):
+        node_config["vllm_upstream_version"] = config["vllm_upstream_version"]
     installers = {item["asset"] for item in config["installers"]}
     incoming = {name: f"incoming/{name}" + (".run" if name in installers else "") for name in sources}
     node_config.update(cards=node["cards"], address=address, assets={

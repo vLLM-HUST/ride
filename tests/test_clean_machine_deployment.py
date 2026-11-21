@@ -49,6 +49,16 @@ class CleanMachineDeploymentTests(unittest.TestCase):
             self.assertEqual(plan["model_services"][-1]["resources"], {"NPU": 8, "node:192.0.2.16": 0.001})
             self.assertNotIn("secret", (work / "request-throttling.json").read_text())
 
+    def test_source_version_guides_vllm_ascend_without_changing_rides_environment(self):
+        config = self.inventory()
+        config["vllm_upstream_version"] = "0.23.0"
+        clean.validate(config)
+        with tempfile.TemporaryDirectory() as tmp:
+            plan = clean.write_plans(config, Path(tmp), "/opt/ride-clean/myc-pujiang", "secret")
+        self.assertTrue(all(model["runtime_env"]["env_vars"]["VLLM_VERSION"] == "0.23.0"
+                            for model in plan["model_services"]))
+        self.assertNotIn("VLLM_VERSION", plan["management"]["runtime_env"]["env_vars"])
+
     def test_download_refuses_checksum_mismatch(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

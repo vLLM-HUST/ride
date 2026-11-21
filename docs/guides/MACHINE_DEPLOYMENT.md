@@ -42,7 +42,9 @@ bash scripts/one-click.sh machines-clean inventory.json results/pujiang
 用 `worker_work_parent` 指定存放安装包、解压临时文件和模型权重的工作目录。还需在
 `installers` 配置里指定空间充足、符合安装器权限要求的 CANN 安装路径，并把对应的
 环境脚本填入 `environment_scripts`。脚本先安装清单第一台机器并核验设备数量，
-通过后并行安装其他机器。
+通过后并行安装其他机器。若 vLLM wheel 带本地构建后缀，在清单填写
+`vllm_upstream_version`，例如 `"0.23.0"`。脚本使用这个源版本加载 vLLM Ascend
+插件，并将同一个值传给每个模型作业。填写构建所用的 vLLM 源版本。
 
 示例清单对应浦江目标规模，共 16 台、每台 8 卡。通过 9443 模拟时，按实际独占
 设备数填写节点和卡数。
