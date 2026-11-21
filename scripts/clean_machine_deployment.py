@@ -179,7 +179,10 @@ def worker(root, config):
     if config["address"] not in addresses:
         raise ValueError("SSH target does not own the inventory network address")
     python = environment(root, config["assets"], "worker")
-    install_env = {**os.environ, "PATH": str(python.parent) + ":" + os.environ["PATH"]}
+    vendor_temp = root / "vendor-tmp"
+    vendor_temp.mkdir(mode=0o700)
+    install_env = {**os.environ, "PATH": str(python.parent) + ":" + os.environ["PATH"],
+                   "TMPDIR": str(vendor_temp)}
     for installer in config["installers"]:
         asset = installer["asset"]
         path = local_worker_asset(config["assets"][asset], root)
@@ -464,8 +467,12 @@ def orchestrate(config_file, output, jump_only=False):
         def prepare(node):
             return prepare_node(config, node, remote, root, commands[node["address"]], evidence, worker_assets)
 
+        first_worker, *other_workers = config["nodes"]
+        first_status = prepare(first_worker)
+        if first_status:
+            raise RuntimeError(f"Worker installation failed on {first_worker['address']}: {first_status}")
         with ThreadPoolExecutor(max_workers=4) as executor:
-            statuses = list(executor.map(prepare, config["nodes"]))
+            statuses = list(executor.map(prepare, other_workers))
         if any(statuses):
             raise RuntimeError(f"Worker installation failed: {statuses}")
         bootstrap_exit = 0
