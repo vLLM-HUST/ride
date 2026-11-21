@@ -55,6 +55,9 @@ def validate(config):
     expected = config["expected_nodes"]
     if type(expected) is not int or expected < 1 or len(nodes) != expected:
         raise ValueError(f"Inventory has {len(nodes)} nodes, expected {expected}")
+    batch_size = config.get("model_start_batch_size", 1)
+    if type(batch_size) is not int or not 1 <= batch_size <= expected:
+        raise ValueError("model_start_batch_size must be from one through the node count")
     addresses = [str(ipaddress.IPv4Address(node["address"])) for node in nodes]
     if len(addresses) != len(set(addresses)):
         raise ValueError("Inventory contains duplicate node addresses")
@@ -321,6 +324,8 @@ def write_plans(config, root, remote, token):
                             "model_services": [item["id"] for item in models]}],
         "readiness_timeout_seconds": config.get("readiness_timeout_seconds", 1200),
     }
+    if "model_start_batch_size" in config:
+        plan["model_start_batch_size"] = config["model_start_batch_size"]
     dump(root / "deployment.json", plan)
     return plan
 

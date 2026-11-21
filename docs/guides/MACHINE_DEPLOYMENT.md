@@ -47,7 +47,8 @@ bash scripts/one-click.sh machines-clean inventory.json results/pujiang
 插件，并将同一个值传给每个模型作业。填写构建所用的 vLLM 源版本。
 
 示例清单对应浦江目标规模，共 16 台、每台 8 卡。通过 9443 模拟时，按实际独占
-设备数填写节点和卡数。
+设备数填写节点和卡数。清单可以用 `model_start_batch_size` 指定一批启动多少个
+vLLM 副本。每批先提交作业，再等该批全部就绪。RIDE 在所有副本就绪后启动请求限流控制器。
 
 跳板机启动前可使用 `python3 scripts/clean_machine_deployment.py --check inventory.json`
 做不联网的清单校验。在完整节点尚未分配时，可将 `--jump-only` 加到一键命令末尾，
