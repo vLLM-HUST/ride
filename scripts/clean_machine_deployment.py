@@ -199,12 +199,29 @@ def worker(root, config):
     probe_env = os.environ.copy()
     if config.get("vllm_upstream_version"):
         probe_env["VLLM_VERSION"] = config["vllm_upstream_version"]
-    probe = ("import sys, torch, torch_npu, vllm; "
-             "from vllm.plugins import load_general_plugins; load_general_plugins(); "
-             "import thunderagent_controller_mod.ride_managed; "
-             "from ray.dashboard.modules.job.job_head import JobHead; "
-             "n=torch.npu.device_count(); print('visible_npu_devices', n, flush=True); "
-             "sys.exit(n != int(sys.argv[1]))")
+    probe = """
+import sys
+
+from ray.dashboard.modules.job.job_head import JobHead
+import thunderagent_controller_mod.ride_managed
+import torch
+import torch_npu
+from vllm.plugins import load_general_plugins
+
+load_general_plugins()
+expected = int(sys.argv[1])
+visible = torch.npu.device_count()
+print("visible_npu_devices", visible, flush=True)
+if visible != expected:
+    raise RuntimeError(f"Expected {expected} accessible devices, found {visible}")
+for index in range(visible):
+    device = f"npu:{index}"
+    torch.npu.set_device(device)
+    inputs = torch.ones(2, 2, device=device)
+    if (inputs @ inputs).cpu().tolist() != [[2, 2], [2, 2]]:
+        raise RuntimeError(f"Matrix multiplication returned an invalid result on {device}")
+    print("verified_npu_compute", device, flush=True)
+"""
     subprocess.run(source_command(config["environment_scripts"], [python, "-c", probe, str(config["cards"])]),
                    check=True, env=probe_env)
     with (evidence / "packages.txt").open("w") as stream:
