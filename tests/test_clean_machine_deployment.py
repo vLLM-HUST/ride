@@ -1,13 +1,14 @@
 import hashlib
 import importlib.util
 import io
+import runpy
 import json
 from pathlib import Path
 import tempfile
 import tarfile
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 script = Path(__file__).resolve().parents[1] / "scripts/clean_machine_deployment.py"
 spec = importlib.util.spec_from_file_location("clean_machine_deployment", script)
@@ -28,6 +29,21 @@ class CleanMachineDeploymentTests(unittest.TestCase):
             "installers": [{"asset": "cann", "args": ["--quiet", "--install"]}],
             "environment_scripts": ["/usr/local/Ascend/ascend-toolkit/set_env.sh"],
         }
+
+    def test_chat_prompt_measures_transmitted_text_after_token_boundaries_merge(self):
+        adapter = runpy.run_path(str(script.with_name("replay_swe_smith_chat.py")))
+        renderer = Mock()
+        renderer.text.return_value = "model response\n tool input"
+        renderer.chat_template_kwargs = {"enable_thinking": False}
+        renderer.tokenizer.apply_chat_template.return_value = [80, 90, 91]
+        result = adapter["rendered_chat_prompt"](renderer, [12, 32])
+        self.assertEqual(result, [80, 90, 91])
+        renderer.text.assert_called_once_with([12, 32])
+        renderer.tokenizer.apply_chat_template.assert_called_once_with(
+            [{"role": "user", "content": "model response\n tool input"}],
+            add_generation_prompt=True, tokenize=True, return_dict=False, enable_thinking=False,
+        )
+        renderer.tokenizer.encode.assert_not_called()
 
     def test_incomplete_inventory_rejected_before_preparation(self):
         config = self.inventory()

@@ -424,7 +424,8 @@ def benchmark(root, output):
     dump(output / "controller-identity.json", controller.get("/identity"))
     workload = root / "swe-smith/workload"
     replayer = root / "swe-smith/experiments/workload/replay_sessions.py"
-    command = [sys.executable, replayer, "--workload", workload, "--api", "chat",
+    command = [sys.executable, Path(__file__).with_name("replay_swe_smith_chat.py"),
+               replayer, "--workload", workload, "--api", "chat",
                "--model", models[0]["args"][1], "--tokenizer", root / "tokenizer",
                "--chat-template-kwargs", '{"enable_thinking":false}',
                "--base-url", controller.endpoint + "/v1",
