@@ -51,7 +51,7 @@ bash scripts/one-click.sh machines-clean inventory.json results/pujiang
 
 跳板机启动前可使用 `python3 scripts/clean_machine_deployment.py --check inventory.json`
 做不联网的清单校验。在完整节点尚未分配时，可将 `--jump-only` 加到一键命令末尾，
-独立验证跳板机依赖、模型 tokenizer 以及 SWE-smith 回放工具。
+独立验证跳板机依赖、模型 tokenizer 以及 SWE-smith 回放工具和实际聊天模板渲染。
 
 #### 发布包准备
 
@@ -62,7 +62,7 @@ SSH 把软件和权重发给各节点，目标节点可离线安装。包地址�
 | 清单里的包 | 内容 |
 | --- | --- |
 | `python-runtime` | 与机器架构一致的独立 Python 安装包，含 `python/bin/python3`。可使用 [Python Build Standalone install_only 发行包](https://github.com/astral-sh/python-build-standalone/blob/main/docs/distributions.rst#install-only-archive) |
-| `jump-wheelhouse` | RIDE、Ray Dashboard、SWE-smith 回放所需的 Controller 依赖及 Transformers wheel |
+| `jump-wheelhouse` | RIDE、Ray Dashboard、SWE-smith 回放所需的 Controller 依赖、Transformers、Jinja2 和 MarkupSafe wheel |
 | `worker-debs` | 与目标 Ubuntu 版本、架构匹配的离线系统依赖包，tar 根目录是完整的 `.deb` 文件，包括 Python 3、OpenSSH 客户端、rsync、procps、iproute2 及 CANN 所需系统库。SSH 服务由目标机器交付 |
 | `worker-wheelhouse` | RIDE、Ray Dashboard、与 CANN 及 Python 匹配的 PyTorch、torch_npu、vLLM 和 vLLM Ascend，以及实际的 Request Throttling Controller 和依赖 |
 | `installers` 指定的包 | 实验室批准的 CANN 工具链、内核算子等用户态安装包及该版本的安装参数，按清单顺序安装 |

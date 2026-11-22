@@ -477,10 +477,20 @@ def orchestrate(config_file, output, jump_only=False):
                 raise ValueError(f"Required input is absent: {path.relative_to(root)}")
         with (evidence / "jump-validation.log").open("w") as log:
             subprocess.run([python, replay, "--help"], check=True, stdout=log, stderr=subprocess.STDOUT)
-            subprocess.run([python, "-c", "from ray.dashboard.modules.job.job_head import JobHead; "
-                            "from transformers import AutoTokenizer; import sys; "
-                            "print(len(AutoTokenizer.from_pretrained(sys.argv[1], local_files_only=True)))",
-                            root / "tokenizer"], check=True, stdout=log, stderr=subprocess.STDOUT)
+            subprocess.run([python, "-c", """
+from ray.dashboard.modules.job.job_head import JobHead
+from transformers import AutoTokenizer
+import sys
+
+tokenizer = AutoTokenizer.from_pretrained(sys.argv[1], local_files_only=True)
+rendered = tokenizer.apply_chat_template(
+    [{"role": "user", "content": "Check the SWE-smith chat template."}],
+    tokenize=False, add_generation_prompt=True, enable_thinking=False,
+)
+if not rendered.strip():
+    raise ValueError("The SWE-smith chat template returned empty text")
+print("SWE-smith chat template rendered successfully")
+""", root / "tokenizer"], check=True, stdout=log, stderr=subprocess.STDOUT)
         subprocess.run([python, "-m", "ride.deployment", "validate", root / "deployment.json", root / "state"],
                        check=True)
         with (evidence / "jump-packages.txt").open("w") as stream:
